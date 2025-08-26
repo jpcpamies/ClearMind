@@ -52,7 +52,7 @@ export default function FloatingSidebar({
   });
 
   const getIdeaCount = (groupId: string) => {
-    return ideas.filter((idea: any) => idea.groupId === groupId).length;
+    return (ideas as any[]).filter((idea: any) => idea.groupId === groupId).length;
   };
 
   const handleCreateGroup = () => {

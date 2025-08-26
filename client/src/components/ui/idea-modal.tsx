@@ -55,7 +55,7 @@ export default function IdeaModal({
       title: "",
       description: "",
       priority: "medium",
-      groupId: "",
+      groupId: "unassigned",
     },
   });
 
@@ -65,14 +65,14 @@ export default function IdeaModal({
         title: editingIdea.title,
         description: editingIdea.description || "",
         priority: editingIdea.priority || "medium",
-        groupId: editingIdea.groupId || "",
+        groupId: editingIdea.groupId || "unassigned",
       });
     } else {
       form.reset({
         title: "",
         description: "",
         priority: "medium",
-        groupId: "",
+        groupId: "unassigned",
       });
     }
   }, [editingIdea, form]);
@@ -80,7 +80,7 @@ export default function IdeaModal({
   const handleSubmit = (data: IdeaFormData) => {
     const submitData = {
       ...data,
-      groupId: data.groupId || null,
+      groupId: data.groupId === "unassigned" ? null : data.groupId || null,
     };
     onSubmit(submitData);
   };
@@ -158,7 +158,7 @@ export default function IdeaModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {groups.map((group) => (
                         <SelectItem key={group.id} value={group.id}>
                           {group.name}

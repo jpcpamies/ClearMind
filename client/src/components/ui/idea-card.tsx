@@ -104,7 +104,7 @@ export default function IdeaCard({
           {group ? group.name : "Unassigned"}
         </span>
         <span className={`text-xs px-2 py-1 rounded ${priorityStyle}`}>
-          {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)} Priority
+          {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)} Priority
         </span>
       </div>
     </div>

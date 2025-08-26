@@ -231,7 +231,7 @@ export default function TodoListModal({
                     className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
                   >
                     <Checkbox
-                      checked={idea.completed}
+                      checked={idea.completed || false}
                       onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
                       className="rounded"
                     />
@@ -276,7 +276,7 @@ export default function TodoListModal({
                     className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
                   >
                     <Checkbox
-                      checked={idea.completed}
+                      checked={idea.completed || false}
                       onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
                       className="rounded"
                     />

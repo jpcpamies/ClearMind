@@ -224,7 +224,7 @@ export default function Canvas() {
         isOpen={isTodoModalOpen}
         onClose={() => setIsTodoModalOpen(false)}
         groupId={selectedGroupId}
-        group={selectedGroupId ? groups.find(g => g.id === selectedGroupId) : null}
+        group={selectedGroupId ? groups.find(g => g.id === selectedGroupId) || null : null}
         ideas={selectedGroupId ? ideas.filter(i => i.groupId === selectedGroupId) : []}
         onIdeaUpdate={handleIdeaUpdate}
       />
