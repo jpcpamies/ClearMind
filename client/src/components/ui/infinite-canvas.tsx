@@ -1,5 +1,5 @@
 import { forwardRef, useRef, useEffect } from "react";
-import { useDragAndDrop } from "@/hooks/use-drag-and-drop";
+import { useEnhancedDrag } from "@/hooks/use-enhanced-drag";
 import IdeaCard from "./idea-card";
 import type { Idea, Group } from "@shared/schema";
 
@@ -15,10 +15,11 @@ interface InfiniteCanvasProps {
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
   ({ ideas, groups, zoom, panOffset, onIdeaUpdate, onIdeaEdit }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
-    const { draggedItem, isDragging, handleMouseDown, handleMouseMove, handleMouseUp } = useDragAndDrop({
+    const { draggedItem, isDragging, selectedCards, handleMouseDown, handleTouchStart, handleMouseMove, handleMouseUp } = useEnhancedDrag({
       onDrop: (itemId, newPosition) => {
         onIdeaUpdate(itemId, { canvasX: newPosition.x, canvasY: newPosition.y });
       },
+      ideas,
     });
 
     useEffect(() => {
@@ -60,6 +61,8 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
             position={{ x: idea.canvasX || 0, y: idea.canvasY || 0 }}
             isDragging={isDragging && draggedItem?.id === idea.id}
             onMouseDown={(e) => handleMouseDown(e, { id: idea.id, type: "idea" })}
+            onTouchStart={(e) => handleTouchStart(e, { id: idea.id, type: "idea" })}
+            isSelected={selectedCards.has(idea.id)}
             onEdit={() => onIdeaEdit(idea.id)}
             onUpdate={(updates) => onIdeaUpdate(idea.id, updates)}
           />

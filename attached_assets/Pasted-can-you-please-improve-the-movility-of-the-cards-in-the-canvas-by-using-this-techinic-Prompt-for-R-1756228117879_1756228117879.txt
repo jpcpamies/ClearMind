@@ -1,0 +1,110 @@
+can you please improve the movility of the cards in the canvas by using this techinic: [Prompt for Replicating Native-Level Canvas Card Movement
+
+    Create a smooth, native application-level drag and drop system for cards on a canvas with the following specifications:
+
+    Core Architecture Requirements:
+
+    // 1. Drag State Interface
+    interface DragState {
+      isDragging: boolean;
+      dragCardId: string | null;
+      startPos: { x: number, y: number };
+      offset: { x: number, y: number };
+      initialPositions: Record<string, { x: number, y: number }>;
+      currentPositions: Record<string, { x: number, y: number }>;
+      dragElements: Record<string, HTMLElement>;
+    }
+
+    Performance-Optimized Implementation:
+
+    1. State Management with Refs for Performance:
+    const [dragState, setDragState] = useState<DragState>(initialState);
+    const dragStateRef = useRef<DragState>(dragState);
+    const animationFrameRef = useRef<number | null>(null);
+    const dragPerformanceRef = useRef({
+      lastUpdateTime: 0,
+      frameCount: 0,
+      targetFPS: 60
+    });
+
+    2. Mouse Event Handling with Multi-Selection Support:
+    - Use onMouseDown to initiate drag (button === 0 for left click only)
+    - Support Ctrl/Cmd + click for multi-selection
+    - Calculate precise offset from mouse to card corner
+    - Store initial positions for all selected cards
+    - Apply immediate visual feedback with hardware acceleration
+
+    3. Smooth Drag Animation with requestAnimationFrame:
+    const updateDragPositions = (mouseX: number, mouseY: number) => {
+      // Performance throttling to 60fps
+      const currentTime = performance.now();
+      const deltaTime = currentTime - lastUpdateTime;
+      if (deltaTime < 16.67) return; // ~60fps throttling
+
+      // Use requestAnimationFrame for smooth updates
+      animationFrameRef.current = requestAnimationFrame(() => {
+        // Update all selected cards simultaneously
+        // Apply transforms with exact pixel values: Math.round()
+        // Use hardware-accelerated properties
+      });
+    };
+
+    4. Visual Effects During Drag:
+    /* Apply these styles during drag */
+    .dragging-card {
+      transition: none !important;
+      will-change: transform;
+      z-index: 1000;
+      cursor: grabbing;
+      user-select: none;
+      pointer-events: none;
+      transform: translate(Xpx, Ypx) rotate(2deg) scale(1.02);
+      filter: drop-shadow(0 20px 25px rgba(0, 0, 0, 0.25));
+    }
+
+    5. Advanced Features to Include:
+    - Dynamic Rotation: Slight rotation based on drag velocity
+    - Velocity-Based Scaling: Scale increases with movement speed
+    - Multi-Card Dragging: Drag all selected cards maintaining relative positions
+    - Boundary Detection: Prevent cards from leaving canvas bounds
+    - Debounced Position Saving: Save final positions to database with debouncing
+    - Touch Support: Full mobile touch event handling
+
+    6. Performance Optimizations:
+    - Use transform instead of changing left/top positions during drag
+    - Apply will-change: transform for hardware acceleration
+    - Remove transitions during drag to prevent conflicts
+    - Use requestAnimationFrame for smooth 60fps updates
+    - Event throttling and debouncing for database updates
+    - Passive event listeners where appropriate
+
+    7. Event Listener Management:
+    useEffect(() => {
+      if (isDragging) {
+        document.addEventListener('mousemove', handleMouseMove, { passive: false });
+        document.addEventListener('mouseup', handleMouseUp, { passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+
+        return () => {
+          // Cleanup and reset cursor
+          document.removeEventListener('mousemove', handleMouseMove);
+          // ... other cleanup
+        };
+      }
+    }, [isDragging]);
+
+    8. Position Persistence:
+    - Implement debounced database updates (300ms delay)
+    - Update local state immediately for responsive UI
+    - Invalidate React Query cache after position updates
+    - Store positions as canvasX and canvasY coordinates
+
+    9. Canvas Integration:
+    - Support pan and zoom transforms on parent canvas
+    - Handle coordinate conversion between screen and canvas space
+    - Maintain grid snapping if required
+    - Support selection box for multi-select
+
+    This implementation ensures 60fps smooth dragging, native-like visual feedback, and robust multi-card selection capabilities while maintaining excellent performance even with hundreds of
+    cards on the canvas.]

@@ -15,7 +15,9 @@ interface IdeaCardProps {
   color: string;
   position: { x: number; y: number };
   isDragging: boolean;
+  isSelected: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
+  onTouchStart: (e: React.TouchEvent) => void;
   onEdit: () => void;
   onUpdate: (updates: Partial<Idea>) => void;
 }
@@ -41,7 +43,9 @@ export default function IdeaCard({
   color,
   position,
   isDragging,
+  isSelected,
   onMouseDown,
+  onTouchStart,
   onEdit,
   onUpdate,
 }: IdeaCardProps) {
@@ -62,7 +66,7 @@ export default function IdeaCard({
       data-testid={`idea-card-${idea.id}`}
       className={`idea-card absolute cursor-move select-none transition-transform hover:scale-105 ${cardStyle} ${
         isDragging ? "z-50 rotate-2" : "z-10"
-      }`}
+      } ${isSelected ? "ring-2 ring-blue-400 ring-opacity-50" : ""}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
         width: "256px",
@@ -71,6 +75,7 @@ export default function IdeaCard({
         boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
       }}
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
     >
       <div className="flex justify-between items-start mb-2">
         <h4 
