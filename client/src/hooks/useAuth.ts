@@ -120,7 +120,19 @@ export function useAuth() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setUser(null, null);
+      // Clear localStorage first
+      localStorage.removeItem(TOKEN_KEY);
+      
+      // Clear the user state with explicit state update
+      setAuthState({
+        user: null,
+        token: null,
+        loading: false,
+        error: null,
+      });
+      
+      // Force a re-render of the entire app by reloading
+      window.location.reload();
     }
   }, []);
 
