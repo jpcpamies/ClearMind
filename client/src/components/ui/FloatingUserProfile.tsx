@@ -72,7 +72,7 @@ export default function FloatingUserProfile() {
                   {user.displayName}
                 </p>
                 <p className="text-xs text-white/80" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                  @{user.username}
+                  {user.email}
                 </p>
               </div>
               

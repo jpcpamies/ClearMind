@@ -6,15 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, Mail, Lock, User, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserCheck } from 'lucide-react';
 import logoUrl from '@assets/logo-completo-vertical-clearmind_1756235946084.png';
 
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(20, 'Username must be less than 20 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   displayName: z.string()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be less than 50 characters'),
@@ -113,22 +109,6 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              id="username"
-              type="text"
-              placeholder="Choose a username"
-              className="pl-10"
-              {...register('username')}
-            />
-          </div>
-          {errors.username && (
-            <p className="text-sm text-red-600">{errors.username.message}</p>
-          )}
-        </div>
 
         <div className="space-y-2">
           <Label htmlFor="displayName">Display Name</Label>
