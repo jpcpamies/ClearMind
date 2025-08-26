@@ -1,3 +1,4 @@
+import { MoreVertical, Plus } from "lucide-react";
 import type { Group, Idea } from "@shared/schema";
 
 interface TodoListGridProps {
@@ -40,54 +41,162 @@ export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoList
     <div className="max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold text-foreground mb-8">Todo Lists</h1>
       
-      {groups.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground text-lg">No todo lists created yet.</p>
-          <p className="text-muted-foreground text-sm mt-2">Switch to Canvas view to create groups and ideas.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Create New Notebook Card */}
+        <div
+          className="todo-list-card cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md"
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "2px dashed #D3D3D3",
+            borderRadius: "12px",
+            padding: "16px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            minHeight: "200px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => {/* Handle create new notebook */}}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#F0F6FF";
+            e.currentTarget.style.borderColor = "#4285F4";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "#FFFFFF";
+            e.currentTarget.style.borderColor = "#D3D3D3";
+          }}
+        >
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              backgroundColor: "transparent",
+              border: "2px solid #4285F4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "12px",
+            }}
+          >
+            <Plus
+              style={{
+                width: "24px",
+                height: "24px",
+                color: "#4285F4",
+              }}
+            />
+          </div>
+          <h3
+            style={{
+              fontSize: "15px",
+              fontWeight: "500",
+              color: "#333",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            Crear cuaderno
+          </h3>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groups.map((group) => {
-            const { total, stats } = getGroupStats(group.id);
-            
-            return (
+
+        {/* Existing Group Cards */}
+        {groups.map((group) => {
+          const { total, stats } = getGroupStats(group.id);
+          const groupEmoji = group.color === 'purple' ? '💜' : 
+                           group.color === 'blue' ? '💙' :
+                           group.color === 'green' ? '💚' : '🧡';
+          
+          return (
+            <div
+              key={group.id}
+              data-testid={`todolist-card-${group.id}`}
+              className="todo-list-card cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md"
+              style={{
+                backgroundColor: "#F5F6FA",
+                borderRadius: "12px",
+                padding: "16px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                minHeight: "200px",
+                position: "relative",
+              }}
+              onClick={() => onTodoListOpen(group.id)}
+            >
+              {/* Menu Button */}
               <div
-                key={group.id}
-                data-testid={`todolist-card-${group.id}`}
-                className="todo-list-card bg-card border border-border rounded-lg p-6 card-shadow hover:card-shadow-lg transition-all cursor-pointer"
-                onClick={() => onTodoListOpen(group.id)}
+                style={{
+                  position: "absolute",
+                  top: "12px",
+                  right: "12px",
+                }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
-                    <h3 className="font-semibold text-foreground">{group.name}</h3>
-                  </div>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                    {total} task{total !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                
-                <div className="space-y-2">
-                  {Object.entries(stats).map(([priority, count]) => (
-                    <div key={priority} className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${priorityColors[priority as keyof typeof priorityColors]}`} />
-                      <span className="text-sm text-muted-foreground">
-                        {count} {priority} priority
-                      </span>
-                    </div>
-                  ))}
-                  
-                  {total === 0 && (
-                    <div className="text-sm text-muted-foreground italic">
-                      No tasks yet
-                    </div>
-                  )}
-                </div>
+                <MoreVertical
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    color: "#999",
+                  }}
+                />
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              {/* Icon */}
+              <div
+                style={{
+                  fontSize: "32px",
+                  marginBottom: "8px",
+                }}
+              >
+                {groupEmoji}
+              </div>
+
+              {/* Title */}
+              <h3
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#222",
+                  marginTop: "8px",
+                  marginBottom: "4px",
+                }}
+              >
+                {group.name}
+              </h3>
+
+              {/* Subtitle */}
+              <p
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "400",
+                  color: "#666",
+                  marginTop: "4px",
+                  marginBottom: "16px",
+                }}
+              >
+                {total} task{total !== 1 ? 's' : ''}
+              </p>
+              
+              {/* Priority Stats */}
+              <div className="space-y-2">
+                {Object.entries(stats).map(([priority, count]) => (
+                  <div key={priority} className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${priorityColors[priority as keyof typeof priorityColors]}`} />
+                    <span className="text-sm text-muted-foreground">
+                      {count} {priority} priority
+                    </span>
+                  </div>
+                ))}
+                
+                {total === 0 && (
+                  <div className="text-sm text-muted-foreground italic">
+                    No tasks yet
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
