@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import logoUrl from '@assets/logo-completo-vertical-clearmind_1756235946084.png';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -43,9 +44,15 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+        <img 
+          src={logoUrl} 
+          alt="ClearMind Logo" 
+          className="mx-auto mb-6" 
+          style={{ width: '260px' }}
+        />
+        <h1 className="text-2xl font-bold text-gray-900">Welcome to ClearMind ✨</h1>
         <p className="text-sm text-gray-600 mt-2">
-          Sign in to your ClearMind account
+          Your space to think clearly and stay organized.
         </p>
       </div>
 
@@ -105,7 +112,11 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
         <Button
           type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+          className="w-full text-white"
+          style={{ 
+            background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%)',
+            border: 'none'
+          }}
           disabled={!isValid || loading}
         >
           {loading ? 'Signing in...' : 'Sign in'}
