@@ -28,6 +28,9 @@ const ideaFormSchema = z.object({
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "critical"]),
   groupId: z.string().optional(),
+  canvasX: z.number().optional(),
+  canvasY: z.number().optional(),
+  completed: z.boolean().optional(),
 });
 
 type IdeaFormData = z.infer<typeof ideaFormSchema>;
@@ -80,7 +83,10 @@ export default function IdeaModal({
   const handleSubmit = (data: IdeaFormData) => {
     const submitData = {
       ...data,
-      groupId: data.groupId === "unassigned" ? null : data.groupId || null,
+      groupId: data.groupId === "unassigned" ? undefined : data.groupId,
+      canvasX: 0,
+      canvasY: 0,
+      completed: false,
     };
     onSubmit(submitData);
   };

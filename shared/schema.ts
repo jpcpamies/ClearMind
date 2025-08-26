@@ -61,12 +61,18 @@ export const todoSectionsRelations = relations(todoSections, ({ one }) => ({
 // Insert schemas
 export const insertIdeaSchema = createInsertSchema(ideas).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  canvasX: z.number().optional(),
+  canvasY: z.number().optional(),
+  completed: z.boolean().optional(),
 });
 
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });

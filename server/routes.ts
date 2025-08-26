@@ -36,7 +36,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ideas", auth, async (req: any, res) => {
     try {
       const validatedData = insertIdeaSchema.parse(req.body);
-      const idea = await storage.createIdea({...validatedData, userId: req.user.id});
+      const ideaData = {
+        ...validatedData,
+        userId: req.user.id,
+        canvasX: validatedData.canvasX ?? 0,
+        canvasY: validatedData.canvasY ?? 0,
+        completed: validatedData.completed ?? false,
+      };
+      const idea = await storage.createIdea(ideaData);
       res.status(201).json(idea);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -117,7 +124,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/groups", auth, async (req: any, res) => {
     try {
       const validatedData = insertGroupSchema.parse(req.body);
-      const group = await storage.createGroup({...validatedData, userId: req.user.id});
+      const groupData = {
+        ...validatedData,
+        userId: req.user.id,
+      };
+      const group = await storage.createGroup(groupData);
       res.status(201).json(group);
     } catch (error) {
       if (error instanceof z.ZodError) {
