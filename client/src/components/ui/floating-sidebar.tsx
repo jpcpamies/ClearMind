@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, MoreHorizontal, Edit2, List, Trash2 } from "lucide-react";
+import logoUrl from "@assets/logo-clearming_1756233885620.webp";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
@@ -79,7 +80,26 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="glassmorphism rounded-lg p-6 w-72 card-shadow animate-slideUp">
+    <div className="glassmorphism rounded-lg p-4 w-80 card-shadow animate-slideUp">
+      {/* Logo */}
+      <div className="mb-6">
+        <img 
+          src={logoUrl} 
+          alt="Clear Mind Logo" 
+          className="max-w-[280px] h-auto"
+        />
+      </div>
+
+      {/* Greeting */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-2">
+          Hello Jordi Pamies
+        </h2>
+        <p className="text-muted-foreground">
+          What ideas do you have today?
+        </p>
+      </div>
+
       {/* New Idea Button */}
       <Button
         data-testid="button-new-idea"
@@ -172,7 +192,7 @@ export default function FloatingSidebar({
               <div
                 key={group.id}
                 data-testid={`group-item-${group.id}`}
-                className="group-item p-3 rounded-lg border border-border hover:bg-accent/50 transition-all cursor-pointer"
+                className="group-item p-3 rounded-lg bg-white border border-border hover:bg-gray-50 transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -180,7 +200,7 @@ export default function FloatingSidebar({
                     <span className="font-medium text-foreground">{group.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <span className="text-xs text-muted-foreground bg-white border border-border px-2 py-1 rounded">
                       {getIdeaCount(group.id)}
                     </span>
                     <DropdownMenu>
@@ -189,7 +209,7 @@ export default function FloatingSidebar({
                           variant="ghost"
                           size="sm"
                           data-testid={`button-group-menu-${group.id}`}
-                          className="h-6 w-6 p-0"
+                          className="h-6 w-6 p-0 bg-white border border-border hover:bg-gray-50"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MoreHorizontal className="w-4 h-4 text-muted-foreground" />

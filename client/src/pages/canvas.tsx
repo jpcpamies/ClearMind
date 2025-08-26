@@ -162,7 +162,7 @@ export default function Canvas() {
       {currentView === "canvas" ? (
         <>
           {/* Left Floating Sidebar */}
-          <div className="absolute top-24 left-6 z-20">
+          <div className="absolute top-4 left-4 z-20">
             <FloatingSidebar
               groups={groups}
               onNewIdea={handleNewIdea}
