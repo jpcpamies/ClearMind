@@ -29,6 +29,8 @@ export default function FloatingUserProfile() {
 
   const handleLogout = async () => {
     await logout();
+    // Force navigation to login by reloading the page
+    window.location.reload();
   };
 
   return (
@@ -95,7 +97,7 @@ export default function FloatingUserProfile() {
           {/* Logout menu item */}
           <DropdownMenuItem 
             onClick={handleLogout}
-            className="px-4 py-2 cursor-pointer text-black hover:bg-white/10 focus:bg-white/10"
+            className="px-4 py-2 cursor-pointer text-black hover:bg-red-500/20 hover:text-red-600 focus:bg-red-500/20 focus:text-red-600 transition-colors"
           >
             <LogOut className="h-4 w-4 mr-3" />
             Logout
