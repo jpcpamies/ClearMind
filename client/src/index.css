@@ -108,30 +108,28 @@
 
 /* Idea card styles */
 .group-purple { 
-  background: linear-gradient(135deg, hsl(262.1 83.3% 57.8%) 0%, hsl(270 83.3% 67.8%) 100%); 
+  background-color: #7A5FF5;
 }
 
 .group-blue { 
-  background: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(230 83.2% 63.3%) 100%); 
+  background-color: #2D6CF6;
 }
 
 .group-green { 
-  background: linear-gradient(135deg, hsl(142.1 76.2% 36.3%) 0%, hsl(150 76.2% 46.3%) 100%); 
+  background-color: #10B981;
 }
 
 .group-orange { 
-  background: linear-gradient(135deg, hsl(24.6 95% 53.1%) 0%, hsl(32.6 95% 63.1%) 100%); 
+  background-color: #F59E0B;
 }
 
 .group-unassigned { 
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px dashed hsl(214.3 31.8% 91.4%);
-  backdrop-filter: blur(10px);
+  background-color: #FFFFFF;
+  border: 2px solid transparent;
 }
 
 .dark .group-unassigned {
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px dashed hsl(210 5.2632% 14.9020%);
+  background-color: #1F2937;
 }
 
 /* Animations */

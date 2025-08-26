@@ -1,0 +1,86 @@
+{
+  "card_style": {
+    "default": {
+      "background_color": "#FFFFFF",
+      "border_radius": "12px",
+      "shadow": "0 2px 6px rgba(0,0,0,0.08)",
+      "padding": "16px",
+      "title": {
+        "font_size": "14px",
+        "font_weight": "600",
+        "color": "#1A1A1A"
+      },
+      "description": {
+        "font_size": "12px",
+        "font_weight": "400",
+        "color": "#666666"
+      },
+      "tag": {
+        "background_color": "#F3F4F6",
+        "text_color": "#555555",
+        "border_radius": "20px",
+        "font_size": "12px",
+        "padding": "2px 8px"
+      },
+      "menu_icon": {
+        "color": "#999999",
+        "size": "16px"
+      }
+    },
+    "grouped": {
+      "background_color": "#7A5FF5",
+      "border_radius": "12px",
+      "shadow": "0 2px 6px rgba(0,0,0,0.08)",
+      "padding": "16px",
+      "title": {
+        "font_size": "14px",
+        "font_weight": "600",
+        "color": "#FFFFFF"
+      },
+      "description": {
+        "font_size": "12px",
+        "font_weight": "400",
+        "color": "#E6E6E6"
+      },
+      "tag": {
+        "background_color": "rgba(255,255,255,0.2)",
+        "text_color": "#FFFFFF",
+        "border_radius": "20px",
+        "font_size": "12px",
+        "padding": "2px 8px"
+      },
+      "menu_icon": {
+        "color": "#FFFFFF",
+        "size": "16px"
+      }
+    },
+    "selected": {
+      "background_color": "#FFFFFF",
+      "border_radius": "12px",
+      "shadow": "0 2px 6px rgba(0,0,0,0.08)",
+      "padding": "16px",
+      "border": "2px solid #2D6CF6",
+      "title": {
+        "font_size": "14px",
+        "font_weight": "600",
+        "color": "#1A1A1A"
+      },
+      "description": {
+        "font_size": "12px",
+        "font_weight": "400",
+        "color": "#666666"
+      },
+      "tag": {
+        "background_color": "#F3F4F6",
+        "text_color": "#555555",
+        "border_radius": "20px",
+        "font_size": "12px",
+        "padding": "2px 8px"
+      },
+      "menu_icon": {
+        "color": "#999999",
+        "size": "16px"
+      }
+    }
+  }
+}
