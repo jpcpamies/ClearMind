@@ -6,21 +6,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { 
-  User, 
-  Settings, 
-  Moon, 
-  Sun, 
   LogOut, 
   ChevronDown 
 } from 'lucide-react';
 
 export default function FloatingUserProfile() {
   const { user, logout } = useAuth();
-  const [isDark, setIsDark] = useState(false);
 
   if (!user) return null;
 
@@ -35,11 +29,6 @@ export default function FloatingUserProfile() {
 
   const handleLogout = async () => {
     await logout();
-  };
-
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    // Add theme switching logic here if needed
   };
 
   return (
@@ -83,11 +72,11 @@ export default function FloatingUserProfile() {
 
         <DropdownMenuContent 
           align="end" 
-          className="w-64 mt-2 bg-white border border-gray-200 shadow-lg"
+          className="w-64 mt-2 frosted-glass-bg border-0 shadow-lg"
           sideOffset={8}
         >
           {/* User info section */}
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-white/20">
             <div className="flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage 
@@ -99,39 +88,20 @@ export default function FloatingUserProfile() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-white truncate" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
                   {user.displayName}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-white/80 truncate" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
                   {user.email}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Menu items */}
-          <DropdownMenuItem className="px-4 py-2 cursor-pointer">
-            <User className="h-4 w-4 mr-3" />
-            Profile Settings
-          </DropdownMenuItem>
-
-          <DropdownMenuItem 
-            onClick={toggleTheme}
-            className="px-4 py-2 cursor-pointer"
-          >
-            {isDark ? (
-              <Sun className="h-4 w-4 mr-3" />
-            ) : (
-              <Moon className="h-4 w-4 mr-3" />
-            )}
-            Switch Theme
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
+          {/* Logout menu item */}
           <DropdownMenuItem 
             onClick={handleLogout}
-            className="px-4 py-2 cursor-pointer text-red-600 focus:text-red-600"
+            className="px-4 py-2 cursor-pointer text-white hover:bg-white/10 focus:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-3" />
             Logout
