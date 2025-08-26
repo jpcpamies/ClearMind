@@ -80,22 +80,18 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="glassmorphism rounded-lg p-4 w-80 card-shadow animate-slideUp">
+    <div className="bg-white rounded-lg p-4 w-80 shadow-lg animate-slideUp">
       {/* Logo */}
-      <div className="mb-6">
-        <img 
-          src={logoUrl} 
-          alt="Clear Mind Logo" 
-          className="max-w-[280px] h-auto"
-        />
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-gray-900">ClearMind</h1>
       </div>
 
       {/* Greeting */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground mb-2">
+        <h2 className="text-base font-medium text-gray-900 mb-1">
           Hello Jordi Pamies
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-gray-500">
           What ideas do you have today?
         </p>
       </div>
@@ -104,7 +100,7 @@ export default function FloatingSidebar({
       <Button
         data-testid="button-new-idea"
         onClick={onNewIdea}
-        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-4 rounded-lg mb-6 flex items-center justify-center space-x-2"
+        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg mb-6 flex items-center justify-center space-x-2"
       >
         <Plus className="w-4 h-4" />
         <span>New Idea</span>
@@ -113,7 +109,7 @@ export default function FloatingSidebar({
       {/* Idea Groups Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-foreground font-semibold text-sm uppercase tracking-wide">
+          <h3 className="text-gray-900 font-semibold text-sm uppercase tracking-wide">
             Idea Groups
           </h3>
           <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
@@ -182,7 +178,7 @@ export default function FloatingSidebar({
 
         {/* Group List */}
         {groups.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-gray-500">
             <p className="text-sm">No groups created yet.</p>
             <p className="text-xs mt-1">Click + to create your first group.</p>
           </div>
@@ -192,15 +188,15 @@ export default function FloatingSidebar({
               <div
                 key={group.id}
                 data-testid={`group-item-${group.id}`}
-                className="group-item p-3 rounded-lg bg-white border border-border hover:bg-gray-50 transition-all cursor-pointer"
+                className="group-item p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-3 h-3 rounded-full ${getColorClass(group.color)}`} />
-                    <span className="font-medium text-foreground">{group.name}</span>
+                    <span className="font-medium text-gray-900">{group.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground bg-white border border-border px-2 py-1 rounded">
+                    <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded">
                       {getIdeaCount(group.id)}
                     </span>
                     <DropdownMenu>
@@ -209,10 +205,10 @@ export default function FloatingSidebar({
                           variant="ghost"
                           size="sm"
                           data-testid={`button-group-menu-${group.id}`}
-                          className="h-6 w-6 p-0 bg-white border border-border hover:bg-gray-50"
+                          className="h-6 w-6 p-0 bg-white hover:bg-gray-50 rounded"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          <MoreHorizontal className="w-4 h-4 text-gray-600" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
