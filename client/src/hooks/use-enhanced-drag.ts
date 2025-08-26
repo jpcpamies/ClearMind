@@ -26,6 +26,8 @@ interface Position {
 interface UseEnhancedDragProps {
   onDrop: (itemId: string, position: Position) => void;
   ideas: Array<{ id: string; canvasX?: number | null; canvasY?: number | null }>;
+  zoom?: number;
+  panOffset?: { x: number; y: number };
 }
 
 const initialDragState: DragState = {
@@ -41,7 +43,7 @@ const initialDragState: DragState = {
   selectedCards: new Set(),
 };
 
-export function useEnhancedDrag({ onDrop, ideas }: UseEnhancedDragProps) {
+export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y: 0 } }: UseEnhancedDragProps) {
   const [dragState, setDragState] = useState<DragState>(initialDragState);
   const dragStateRef = useRef<DragState>(dragState);
   const animationFrameRef = useRef<number | null>(null);
@@ -168,11 +170,15 @@ export function useEnhancedDrag({ onDrop, ideas }: UseEnhancedDragProps) {
       y: e.clientY - rect.top,
     };
 
-    // Find current idea position
+    // Find current idea position and convert to screen coordinates
     const currentIdea = ideas.find(idea => idea.id === item.id);
-    const currentPos = { 
+    const canvasPos = { 
       x: currentIdea?.canvasX || 0, 
       y: currentIdea?.canvasY || 0 
+    };
+    const currentPos = {
+      x: canvasPos.x * zoom + panOffset.x,
+      y: canvasPos.y * zoom + panOffset.y
     };
 
     let selectedCards = new Set<string>();
@@ -187,13 +193,13 @@ export function useEnhancedDrag({ onDrop, ideas }: UseEnhancedDragProps) {
       selectedCards.add(item.id);
     }
 
-    // Store initial positions and elements for all selected cards
+    // Store initial positions and elements for all selected cards (in screen coordinates)
     selectedCards.forEach(cardId => {
       const cardIdea = ideas.find(idea => idea.id === cardId);
       if (cardIdea) {
         initialPositions[cardId] = {
-          x: cardIdea.canvasX || 0,
-          y: cardIdea.canvasY || 0
+          x: (cardIdea.canvasX || 0) * zoom + panOffset.x,
+          y: (cardIdea.canvasY || 0) * zoom + panOffset.y
         };
       }
       

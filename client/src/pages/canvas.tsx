@@ -181,6 +181,7 @@ export default function Canvas() {
               panOffset={panOffset}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
+              onPanChange={setPanOffset}
             />
           </div>
 
