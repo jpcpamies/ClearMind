@@ -29,8 +29,6 @@ export default function FloatingUserProfile() {
 
   const handleLogout = async () => {
     await logout();
-    // Force navigation to login by reloading the page
-    window.location.reload();
   };
 
   return (
