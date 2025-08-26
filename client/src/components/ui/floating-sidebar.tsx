@@ -84,20 +84,20 @@ export default function FloatingSidebar({
     <>
       {/* Collapsed sidebar - show toggle button */}
       {isCollapsed && (
-        <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
+        <div className="fixed left-4 top-4 z-50 animate-fadeIn">
           <Button
             onClick={() => setIsCollapsed(false)}
-            className="frosted-glass-bg border-0 p-3 rounded-lg shadow-lg hover:bg-white/30 transition-all"
+            className="bg-black border-0 p-4 rounded-lg shadow-lg hover:bg-gray-800 transition-all"
             data-testid="button-show-sidebar"
           >
-            <PanelLeftOpen className="w-5 h-5 text-white" />
+            <PanelLeftOpen className="w-6 h-6 text-white" />
           </Button>
         </div>
       )}
 
       {/* Main sidebar */}
       <div 
-        className={`frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp transition-transform duration-300 ease-in-out ${
+        className={`frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp transition-all duration-300 ease-in-out ${
           isCollapsed ? 'transform -translate-x-full opacity-0' : 'transform translate-x-0 opacity-100'
         }`} 
         style={{height: 'calc(100vh - 24px)'}}
@@ -111,7 +111,7 @@ export default function FloatingSidebar({
             className="p-1 hover:bg-white/20 rounded transition-all"
             data-testid="button-collapse-sidebar"
           >
-            <PanelLeftClose className="w-4 h-4 text-white" />
+            <PanelLeftClose className="w-4 h-4 text-black" />
           </Button>
         </div>
 
