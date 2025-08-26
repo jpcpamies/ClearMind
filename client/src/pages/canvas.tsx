@@ -64,10 +64,6 @@ export default function Canvas() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-      toast({
-        title: "Success",
-        description: "Idea updated successfully",
-      });
     },
     onError: (error) => {
       toast({
