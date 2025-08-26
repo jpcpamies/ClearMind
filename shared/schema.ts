@@ -6,6 +6,7 @@ import { z } from "zod";
 // Ideas table
 export const ideas = pgTable("ideas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   priority: varchar("priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
@@ -20,6 +21,7 @@ export const ideas = pgTable("ideas", {
 // Groups table
 export const groups = pgTable("groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
   name: text("name").notNull(),
   color: varchar("color").notNull(), // purple, blue, green, orange
   createdAt: timestamp("created_at").defaultNow(),
@@ -29,6 +31,7 @@ export const groups = pgTable("groups", {
 // TodoList sections table
 export const todoSections = pgTable("todo_sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
   groupId: varchar("group_id").notNull(),
   name: text("name").notNull(),
   order: integer("order").default(0),

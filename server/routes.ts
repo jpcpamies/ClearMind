@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema } from "@shared/schema";
+import { auth } from "./middleware/auth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -9,9 +10,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const authRoutes = await import('./routes/auth');
   app.use('/api/auth', authRoutes.default);
   // Ideas routes
-  app.get("/api/ideas", async (req, res) => {
+  app.get("/api/ideas", auth, async (req: any, res) => {
     try {
-      const ideas = await storage.getAllIdeas();
+      const ideas = await storage.getAllIdeas(req.user.id);
       res.json(ideas);
     } catch (error) {
       console.error("Error fetching ideas:", error);
@@ -19,9 +20,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/ideas/:id", async (req, res) => {
+  app.get("/api/ideas/:id", auth, async (req: any, res) => {
     try {
-      const idea = await storage.getIdea(req.params.id);
+      const idea = await storage.getIdea(req.params.id, req.user.id);
       if (!idea) {
         return res.status(404).json({ message: "Idea not found" });
       }
@@ -32,10 +33,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ideas", async (req, res) => {
+  app.post("/api/ideas", auth, async (req: any, res) => {
     try {
       const validatedData = insertIdeaSchema.parse(req.body);
-      const idea = await storage.createIdea(validatedData);
+      const idea = await storage.createIdea({...validatedData, userId: req.user.id});
       res.status(201).json(idea);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -46,10 +47,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/ideas/:id", async (req, res) => {
+  app.put("/api/ideas/:id", auth, async (req: any, res) => {
     try {
       const validatedData = insertIdeaSchema.partial().parse(req.body);
-      const idea = await storage.updateIdea(req.params.id, validatedData);
+      const idea = await storage.updateIdea(req.params.id, validatedData, req.user.id);
+      if (!idea) {
+        return res.status(404).json({ message: "Idea not found" });
+      }
       res.json(idea);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -60,9 +64,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/ideas/:id", async (req, res) => {
+  app.delete("/api/ideas/:id", auth, async (req: any, res) => {
     try {
-      await storage.deleteIdea(req.params.id);
+      const deleted = await storage.deleteIdea(req.params.id, req.user.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Idea not found" });
+      }
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting idea:", error);
@@ -71,9 +78,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Groups routes
-  app.get("/api/groups", async (req, res) => {
+  app.get("/api/groups", auth, async (req: any, res) => {
     try {
-      const groups = await storage.getAllGroups();
+      const groups = await storage.getAllGroups(req.user.id);
       res.json(groups);
     } catch (error) {
       console.error("Error fetching groups:", error);
@@ -81,9 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/groups/:id", async (req, res) => {
+  app.get("/api/groups/:id", auth, async (req: any, res) => {
     try {
-      const group = await storage.getGroup(req.params.id);
+      const group = await storage.getGroup(req.params.id, req.user.id);
       if (!group) {
         return res.status(404).json({ message: "Group not found" });
       }
@@ -94,9 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/groups/:id/with-ideas", async (req, res) => {
+  app.get("/api/groups/:id/with-ideas", auth, async (req: any, res) => {
     try {
-      const groupWithIdeas = await storage.getGroupWithIdeas(req.params.id);
+      const groupWithIdeas = await storage.getGroupWithIdeas(req.params.id, req.user.id);
+      if (!groupWithIdeas) {
+        return res.status(404).json({ message: "Group not found" });
+      }
       res.json(groupWithIdeas);
     } catch (error) {
       console.error("Error fetching group with ideas:", error);
@@ -104,10 +114,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/groups", async (req, res) => {
+  app.post("/api/groups", auth, async (req: any, res) => {
     try {
       const validatedData = insertGroupSchema.parse(req.body);
-      const group = await storage.createGroup(validatedData);
+      const group = await storage.createGroup({...validatedData, userId: req.user.id});
       res.status(201).json(group);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -118,10 +128,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/groups/:id", async (req, res) => {
+  app.put("/api/groups/:id", auth, async (req: any, res) => {
     try {
       const validatedData = insertGroupSchema.partial().parse(req.body);
-      const group = await storage.updateGroup(req.params.id, validatedData);
+      const group = await storage.updateGroup(req.params.id, validatedData, req.user.id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
       res.json(group);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -132,9 +145,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/groups/:id", async (req, res) => {
+  app.delete("/api/groups/:id", auth, async (req: any, res) => {
     try {
-      await storage.deleteGroup(req.params.id);
+      const deleted = await storage.deleteGroup(req.params.id, req.user.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Group not found" });
+      }
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting group:", error);
@@ -143,9 +159,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // TodoSections routes
-  app.get("/api/groups/:groupId/todo-sections", async (req, res) => {
+  app.get("/api/groups/:groupId/todo-sections", auth, async (req: any, res) => {
     try {
-      const sections = await storage.getTodoSectionsByGroup(req.params.groupId);
+      const sections = await storage.getTodoSectionsByGroup(req.params.groupId, req.user.id);
       res.json(sections);
     } catch (error) {
       console.error("Error fetching todo sections:", error);
@@ -153,10 +169,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/todo-sections", async (req, res) => {
+  app.post("/api/todo-sections", auth, async (req: any, res) => {
     try {
       const validatedData = insertTodoSectionSchema.parse(req.body);
-      const section = await storage.createTodoSection(validatedData);
+      const section = await storage.createTodoSection({...validatedData, userId: req.user.id});
       res.status(201).json(section);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -168,9 +184,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Utility routes
-  app.get("/api/ideas/unassigned", async (req, res) => {
+  app.get("/api/ideas/unassigned", auth, async (req: any, res) => {
     try {
-      const ideas = await storage.getUnassignedIdeas();
+      const ideas = await storage.getUnassignedIdeas(req.user.id);
       res.json(ideas);
     } catch (error) {
       console.error("Error fetching unassigned ideas:", error);
@@ -178,9 +194,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/groups/:groupId/ideas", async (req, res) => {
+  app.get("/api/groups/:groupId/ideas", auth, async (req: any, res) => {
     try {
-      const ideas = await storage.getIdeasByGroup(req.params.groupId);
+      const ideas = await storage.getIdeasByGroup(req.params.groupId, req.user.id);
       res.json(ideas);
     } catch (error) {
       console.error("Error fetching ideas by group:", error);

@@ -1,0 +1,92 @@
+CRITICAL SECURITY FIX: Implement proper user data isolation in Clear Mind v2.0
+
+The application currently shows the same data to all users regardless of who is logged in. This is a critical security issue that must be fixed immediately.
+
+BACKEND API SECURITY UPDATES:
+
+Update ALL database queries to filter by authenticated user:
+
+1. In /server/routes/containers.js (or wherever container routes are):
+   - GET /api/containers - Add WHERE user_id = req.user.id
+   - POST /api/containers - Include user_id in INSERT
+   - PUT /api/containers/:id - Add WHERE user_id = req.user.id AND id = :id
+   - DELETE /api/containers/:id - Add WHERE user_id = req.user.id AND id = :id
+
+2. In /server/routes/ideas.js (or wherever idea routes are):
+   - GET /api/ideas - Add WHERE user_id = req.user.id
+   - POST /api/ideas - Include user_id in INSERT
+   - PUT /api/ideas/:id - Add WHERE user_id = req.user.id AND id = :id
+   - DELETE /api/ideas/:id - Add WHERE user_id = req.user.id AND id = :id
+
+3. In staging table queries:
+   - ideas_staging_canvas - Filter by user_id = req.user.id
+   - ideas_staging_todolist - Filter by user_id = req.user.id
+
+4. In sections table queries:
+   - GET sections - Filter by user_id = req.user.id
+   - All CRUD operations must include user_id filter
+
+AUTHENTICATION MIDDLEWARE VERIFICATION:
+Ensure /server/middleware/auth.js properly:
+- Extracts user ID from JWT token
+- Queries database to get full user object
+- Attaches user object to req.user with correct ID field
+- Returns 401 if user not found in database
+
+DATABASE QUERY EXAMPLES:
+Instead of:
+```sql
+SELECT * FROM idea_containers;
+Use:
+sqlSELECT * FROM idea_containers WHERE user_id = $1;
+Instead of:
+sqlINSERT INTO ideas (title, description, container_id) VALUES ($1, $2, $3);
+Use:
+sqlINSERT INTO ideas (title, description, container_id, user_id) VALUES ($1, $2, $3, $4);
+FOREIGN KEY VALIDATION:
+When user tries to access/modify resources, verify ownership:
+
+When updating an idea, check the idea belongs to the user
+When adding idea to container, check container belongs to the user
+When accessing staging data, verify user owns the original resource
+
+ERROR HANDLING:
+
+Return 404 (not 403) when user tries to access non-existent or unauthorized resources
+Never reveal whether a resource exists if user doesn't own it
+Log security violations for monitoring
+
+SAMPLE DATA UPDATE:
+Update any existing sample data to ensure:
+
+All records have proper user_id associations
+Test users have separate, isolated datasets
+No orphaned records without user associations
+
+TESTING VERIFICATION:
+Create at least 2 test users with different data:
+
+User A: containers/ideas set A
+User B: containers/ideas set B
+Verify User A cannot see User B's data and vice versa
+Test that API endpoints properly filter by authenticated user
+
+This fix is CRITICAL for data privacy and security. Every database operation must be user-scoped.
+
+✅ **Validation**:
+- Create two different user accounts
+- Login with User A - should only see User A's data
+- Logout and login with User B - should only see User B's data (completely different)
+- Verify User A cannot access User B's containers/ideas via direct API calls
+- Check that new data created by each user is properly isolated
+
+🔄 **NEXT STEPS**:
+**Current Status**: Phase 2.5 - Critical Security Fix
+**Next**: Phase 3 - Static UI Components (once data isolation is confirmed working)
+
+Let me know:
+✅ If user data isolation works perfectly - each user sees only their own data
+🔧 If there are still data leakage issues
+❌ If there were implementation problems
+
+This security fix is mandatory before proceeding to any UI development!

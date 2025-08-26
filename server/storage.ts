@@ -10,43 +10,43 @@ import {
   type InsertTodoSection,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Ideas operations
-  getAllIdeas(): Promise<Idea[]>;
-  getIdea(id: string): Promise<Idea | undefined>;
+  getAllIdeas(userId: string): Promise<Idea[]>;
+  getIdea(id: string, userId: string): Promise<Idea | undefined>;
   createIdea(idea: InsertIdea): Promise<Idea>;
-  updateIdea(id: string, updates: Partial<InsertIdea>): Promise<Idea>;
-  deleteIdea(id: string): Promise<void>;
+  updateIdea(id: string, updates: Partial<InsertIdea>, userId: string): Promise<Idea | null>;
+  deleteIdea(id: string, userId: string): Promise<boolean>;
 
   // Groups operations
-  getAllGroups(): Promise<Group[]>;
-  getGroup(id: string): Promise<Group | undefined>;
+  getAllGroups(userId: string): Promise<Group[]>;
+  getGroup(id: string, userId: string): Promise<Group | undefined>;
   createGroup(group: InsertGroup): Promise<Group>;
-  updateGroup(id: string, updates: Partial<InsertGroup>): Promise<Group>;
-  deleteGroup(id: string): Promise<void>;
+  updateGroup(id: string, updates: Partial<InsertGroup>, userId: string): Promise<Group | null>;
+  deleteGroup(id: string, userId: string): Promise<boolean>;
 
   // TodoSections operations
-  getTodoSectionsByGroup(groupId: string): Promise<TodoSection[]>;
+  getTodoSectionsByGroup(groupId: string, userId: string): Promise<TodoSection[]>;
   createTodoSection(section: InsertTodoSection): Promise<TodoSection>;
   updateTodoSection(id: string, updates: Partial<InsertTodoSection>): Promise<TodoSection>;
   deleteTodoSection(id: string): Promise<void>;
 
   // Complex queries
-  getIdeasByGroup(groupId: string): Promise<Idea[]>;
-  getUnassignedIdeas(): Promise<Idea[]>;
-  getGroupWithIdeas(groupId: string): Promise<Group & { ideas: Idea[] }>;
+  getIdeasByGroup(groupId: string, userId: string): Promise<Idea[]>;
+  getUnassignedIdeas(userId: string): Promise<Idea[]>;
+  getGroupWithIdeas(groupId: string, userId: string): Promise<(Group & { ideas: Idea[] }) | null>;
 }
 
 export class DatabaseStorage implements IStorage {
   // Ideas operations
-  async getAllIdeas(): Promise<Idea[]> {
-    return await db.select().from(ideas).orderBy(desc(ideas.createdAt));
+  async getAllIdeas(userId: string): Promise<Idea[]> {
+    return await db.select().from(ideas).where(eq(ideas.userId, userId)).orderBy(desc(ideas.createdAt));
   }
 
-  async getIdea(id: string): Promise<Idea | undefined> {
-    const [idea] = await db.select().from(ideas).where(eq(ideas.id, id));
+  async getIdea(id: string, userId: string): Promise<Idea | undefined> {
+    const [idea] = await db.select().from(ideas).where(and(eq(ideas.id, id), eq(ideas.userId, userId)));
     return idea;
   }
 
@@ -58,26 +58,27 @@ export class DatabaseStorage implements IStorage {
     return newIdea;
   }
 
-  async updateIdea(id: string, updates: Partial<InsertIdea>): Promise<Idea> {
+  async updateIdea(id: string, updates: Partial<InsertIdea>, userId: string): Promise<Idea | null> {
     const [updatedIdea] = await db
       .update(ideas)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(ideas.id, id))
+      .where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
       .returning();
-    return updatedIdea;
+    return updatedIdea || null;
   }
 
-  async deleteIdea(id: string): Promise<void> {
-    await db.delete(ideas).where(eq(ideas.id, id));
+  async deleteIdea(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(ideas).where(and(eq(ideas.id, id), eq(ideas.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Groups operations
-  async getAllGroups(): Promise<Group[]> {
-    return await db.select().from(groups).orderBy(desc(groups.createdAt));
+  async getAllGroups(userId: string): Promise<Group[]> {
+    return await db.select().from(groups).where(eq(groups.userId, userId)).orderBy(desc(groups.createdAt));
   }
 
-  async getGroup(id: string): Promise<Group | undefined> {
-    const [group] = await db.select().from(groups).where(eq(groups.id, id));
+  async getGroup(id: string, userId: string): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(and(eq(groups.id, id), eq(groups.userId, userId)));
     return group;
   }
 
@@ -89,30 +90,35 @@ export class DatabaseStorage implements IStorage {
     return newGroup;
   }
 
-  async updateGroup(id: string, updates: Partial<InsertGroup>): Promise<Group> {
+  async updateGroup(id: string, updates: Partial<InsertGroup>, userId: string): Promise<Group | null> {
     const [updatedGroup] = await db
       .update(groups)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(groups.id, id))
+      .where(and(eq(groups.id, id), eq(groups.userId, userId)))
       .returning();
-    return updatedGroup;
+    return updatedGroup || null;
   }
 
-  async deleteGroup(id: string): Promise<void> {
-    // First, unassign all ideas from this group
-    await db.update(ideas).set({ groupId: null }).where(eq(ideas.groupId, id));
-    // Delete todo sections
-    await db.delete(todoSections).where(eq(todoSections.groupId, id));
+  async deleteGroup(id: string, userId: string): Promise<boolean> {
+    // First verify group belongs to user
+    const group = await this.getGroup(id, userId);
+    if (!group) return false;
+    
+    // First, unassign all ideas from this group (only user's ideas)
+    await db.update(ideas).set({ groupId: null }).where(and(eq(ideas.groupId, id), eq(ideas.userId, userId)));
+    // Delete todo sections (only user's sections)
+    await db.delete(todoSections).where(and(eq(todoSections.groupId, id), eq(todoSections.userId, userId)));
     // Delete the group
-    await db.delete(groups).where(eq(groups.id, id));
+    const result = await db.delete(groups).where(and(eq(groups.id, id), eq(groups.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // TodoSections operations
-  async getTodoSectionsByGroup(groupId: string): Promise<TodoSection[]> {
+  async getTodoSectionsByGroup(groupId: string, userId: string): Promise<TodoSection[]> {
     return await db
       .select()
       .from(todoSections)
-      .where(eq(todoSections.groupId, groupId))
+      .where(and(eq(todoSections.groupId, groupId), eq(todoSections.userId, userId)))
       .orderBy(todoSections.order);
   }
 
@@ -138,18 +144,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Complex queries
-  async getIdeasByGroup(groupId: string): Promise<Idea[]> {
-    return await db.select().from(ideas).where(eq(ideas.groupId, groupId));
+  async getIdeasByGroup(groupId: string, userId: string): Promise<Idea[]> {
+    return await db.select().from(ideas).where(and(eq(ideas.groupId, groupId), eq(ideas.userId, userId)));
   }
 
-  async getUnassignedIdeas(): Promise<Idea[]> {
-    return await db.select().from(ideas).where(eq(ideas.groupId, null));
+  async getUnassignedIdeas(userId: string): Promise<Idea[]> {
+    return await db.select().from(ideas).where(and(isNull(ideas.groupId), eq(ideas.userId, userId)));
   }
 
-  async getGroupWithIdeas(groupId: string): Promise<Group & { ideas: Idea[] }> {
-    const group = await this.getGroup(groupId);
-    if (!group) throw new Error("Group not found");
-    const groupIdeas = await this.getIdeasByGroup(groupId);
+  async getGroupWithIdeas(groupId: string, userId: string): Promise<(Group & { ideas: Idea[] }) | null> {
+    const group = await this.getGroup(groupId, userId);
+    if (!group) return null;
+    const groupIdeas = await this.getIdeasByGroup(groupId, userId);
     return { ...group, ideas: groupIdeas };
   }
 }
