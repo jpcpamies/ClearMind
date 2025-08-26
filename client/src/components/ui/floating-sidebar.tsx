@@ -79,7 +79,7 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="glassmorphism rounded-lg p-6 w-72 card-shadow animate-slideUp">
+    <div className="frosted-glass-sidebar p-6 w-72 animate-slideUp">
       {/* New Idea Button */}
       <Button
         data-testid="button-new-idea"
@@ -93,7 +93,7 @@ export default function FloatingSidebar({
       {/* Idea Groups Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-foreground font-semibold text-sm uppercase tracking-wide">
+          <h3 className="text-white font-semibold text-sm uppercase tracking-wide" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
             Idea Groups
           </h3>
           <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
@@ -162,9 +162,9 @@ export default function FloatingSidebar({
 
         {/* Group List */}
         {groups.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">No groups created yet.</p>
-            <p className="text-xs mt-1">Click + to create your first group.</p>
+          <div className="text-center py-8 text-white/80">
+            <p className="text-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>No groups created yet.</p>
+            <p className="text-xs mt-1" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>Click + to create your first group.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -172,15 +172,19 @@ export default function FloatingSidebar({
               <div
                 key={group.id}
                 data-testid={`group-item-${group.id}`}
-                className="group-item p-3 rounded-lg border border-border hover:bg-accent/50 transition-all cursor-pointer"
+                className="frosted-glass-group-item p-3 cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${getColorClass(group.color)}`} />
-                    <span className="font-medium text-foreground">{group.name}</span>
+                    <div className={`w-6 h-6 rounded-full ${getColorClass(group.color)} flex items-center justify-center`}>
+                      <div className="w-3 h-3 rounded-full bg-white/30" />
+                    </div>
+                    <span className="font-semibold text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                      {group.name}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <span className="text-xs text-white bg-white/20 px-2 py-1 rounded backdrop-blur-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
                       {getIdeaCount(group.id)}
                     </span>
                     <DropdownMenu>
@@ -192,7 +196,7 @@ export default function FloatingSidebar({
                           className="h-6 w-6 p-0"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          <MoreHorizontal className="w-4 h-4 text-white/80" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
