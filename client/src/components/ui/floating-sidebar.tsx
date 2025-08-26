@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Edit2, List, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Edit2, List, Trash2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import logoUrl from "@assets/logo-clearming_1756234542415.png";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -46,6 +46,7 @@ export default function FloatingSidebar({
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupColor, setGroupColor] = useState("purple");
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Get idea counts for each group
   const { data: ideas = [] } = useQuery({
@@ -80,15 +81,48 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp" style={{height: 'calc(100vh - 24px)'}}>
-      {/* Logo */}
-      <div className="mt-[140px] mb-4">
-        <img 
-          src={logoUrl} 
-          alt="ClearMind Logo" 
-          className="w-[140px] h-auto"
-        />
-      </div>
+    <>
+      {/* Collapsed sidebar - show toggle button */}
+      {isCollapsed && (
+        <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
+          <Button
+            onClick={() => setIsCollapsed(false)}
+            className="frosted-glass-bg border-0 p-3 rounded-lg shadow-lg hover:bg-white/30 transition-all"
+            data-testid="button-show-sidebar"
+          >
+            <PanelLeftOpen className="w-5 h-5 text-white" />
+          </Button>
+        </div>
+      )}
+
+      {/* Main sidebar */}
+      <div 
+        className={`frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp transition-transform duration-300 ease-in-out ${
+          isCollapsed ? 'transform -translate-x-full opacity-0' : 'transform translate-x-0 opacity-100'
+        }`} 
+        style={{height: 'calc(100vh - 24px)'}}
+      >
+        {/* Collapse button */}
+        <div className="absolute top-3 left-3 z-10">
+          <Button
+            onClick={() => setIsCollapsed(true)}
+            variant="ghost"
+            size="sm"
+            className="p-1 hover:bg-white/20 rounded transition-all"
+            data-testid="button-collapse-sidebar"
+          >
+            <PanelLeftClose className="w-4 h-4 text-white" />
+          </Button>
+        </div>
+
+        {/* Logo */}
+        <div className="mt-[140px] mb-4">
+          <img 
+            src={logoUrl} 
+            alt="ClearMind Logo" 
+            className="w-[140px] h-auto"
+          />
+        </div>
 
       {/* Greeting */}
       <div className="mb-6">
@@ -242,5 +276,6 @@ export default function FloatingSidebar({
         )}
       </div>
     </div>
+    </>
   );
 }
