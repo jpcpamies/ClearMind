@@ -87,10 +87,10 @@ export default function FloatingSidebar({
         <div className="fixed left-4 top-4 z-50 animate-fadeIn">
           <Button
             onClick={() => setIsCollapsed(false)}
-            className="bg-black border-0 p-4 rounded-lg shadow-lg hover:bg-gray-800 transition-all"
+            className="frosted-glass-bg border-0 p-4 rounded-lg shadow-lg hover:bg-white/30 transition-all"
             data-testid="button-show-sidebar"
           >
-            <PanelLeftOpen className="w-6 h-6 text-white" />
+            <PanelLeftOpen className="w-6 h-6 text-black" />
           </Button>
         </div>
       )}
@@ -111,7 +111,7 @@ export default function FloatingSidebar({
             className="p-1 hover:bg-white/20 rounded transition-all"
             data-testid="button-collapse-sidebar"
           >
-            <PanelLeftClose className="w-4 h-4 text-black" />
+            <PanelLeftClose className="w-6 h-6 text-black" />
           </Button>
         </div>
 
