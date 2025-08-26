@@ -88,11 +88,8 @@ export default function FloatingUserProfile() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white truncate" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                <p className="text-sm font-medium text-black truncate">
                   {user.displayName}
-                </p>
-                <p className="text-xs text-white/80 truncate" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                  {user.email}
                 </p>
               </div>
             </div>
@@ -101,7 +98,7 @@ export default function FloatingUserProfile() {
           {/* Logout menu item */}
           <DropdownMenuItem 
             onClick={handleLogout}
-            className="px-4 py-2 cursor-pointer text-white hover:bg-white/10 focus:bg-white/10"
+            className="px-4 py-2 cursor-pointer text-black hover:bg-white/10 focus:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-3" />
             Logout
