@@ -80,7 +80,7 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="frosted-glass-bg rounded-lg p-3 w-80 animate-slideUp" style={{height: 'calc(100vh - 24px)'}}>
+    <div className="frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp" style={{height: 'calc(100vh - 24px)'}}>
       {/* Logo */}
       <div className="mt-[140px] mb-4">
         <img 
