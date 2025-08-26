@@ -1,0 +1,103 @@
+Create a new full-stack web application called "Clear Mind v2.0" - a dual-interface idea management platform with canvas and todolist views.
+
+TECHNOLOGY STACK:
+- Frontend: React 18+ with TypeScript and Tailwind CSS
+- Backend: Express.js with Node.js  
+- Database: PostgreSQL
+- Authentication: Replit Auth
+- Package Manager: npm
+
+PROJECT STRUCTURE:
+/src (React frontend)
+/server (Express.js backend) 
+/database (PostgreSQL schema files)
+/public (static assets)
+
+DATABASE SCHEMA - Create these tables with exact relationships:
+
+1. users table:
+   - id (UUID, primary key, default gen_random_uuid())
+   - replit_user_id (VARCHAR(255), unique, not null)
+   - username (VARCHAR(100), not null)
+   - email (VARCHAR(255), not null) 
+   - display_name (VARCHAR(100))
+   - created_at, updated_at (TIMESTAMP WITH TIME ZONE)
+
+2. idea_containers table:
+   - id (UUID, primary key)
+   - name (VARCHAR(255), not null)
+   - color (VARCHAR(7), not null) -- hex color
+   - sync_status (ENUM: 'synced', 'pending', 'conflict', 'resolving')
+   - canvas_position_x, canvas_position_y (INTEGER)
+   - requires_user_action (BOOLEAN, default false)
+   - user_id (UUID, foreign key to users.id)
+   - created_at (TIMESTAMP)
+
+3. ideas table:
+   - id (UUID, primary key)
+   - title (VARCHAR(255), not null)
+   - description (TEXT)
+   - container_id (UUID, foreign key to idea_containers.id)
+   - priority_level (ENUM: 'low', 'medium', 'high', 'critical')
+   - section_id (UUID, nullable)
+   - order_position (INTEGER, default 0)
+   - canvas_position_x, canvas_position_y (INTEGER, nullable)
+   - is_deleted (BOOLEAN, default false)
+   - created_from (ENUM: 'canvas', 'todolist')
+   - last_modified_from (ENUM: 'canvas', 'todolist') 
+   - version_number (INTEGER, default 1)
+   - user_id (UUID, foreign key to users.id)
+   - created_at, updated_at (TIMESTAMP WITH TIME ZONE)
+
+4. sections table:
+   - id (UUID, primary key)
+   - container_id (UUID, foreign key to idea_containers.id)
+   - name (VARCHAR(255), not null)
+   - order_position (INTEGER, default 0)
+   - user_id (UUID, foreign key to users.id)
+   - created_at (TIMESTAMP)
+
+5. ideas_staging_canvas table:
+   - id (UUID, primary key)
+   - original_idea_id (UUID, foreign key to ideas.id)
+   - staged_title (VARCHAR(255))
+   - staged_description (TEXT)
+   - staged_canvas_x, staged_canvas_y (INTEGER)
+   - conflict_with_todolist (BOOLEAN, default false)
+   - user_id (UUID, foreign key to users.id)
+   - staged_at (TIMESTAMP, default now())
+
+6. ideas_staging_todolist table:
+   - id (UUID, primary key) 
+   - original_idea_id (UUID, foreign key to ideas.id)
+   - staged_title (VARCHAR(255))
+   - staged_description (TEXT)
+   - staged_priority (priority_level ENUM)
+   - staged_section_id (UUID)
+   - staged_order_position (INTEGER)
+   - conflict_with_canvas (BOOLEAN, default false)
+   - user_id (UUID, foreign key to users.id)
+   - staged_at (TIMESTAMP, default now())
+
+7. conflict_resolution_log table:
+   - id (UUID, primary key)
+   - idea_id (UUID, foreign key to ideas.id)
+   - conflict_type (ENUM: 'content_diff', 'delete_vs_modify', 'structural')
+   - canvas_version (JSONB)
+   - todolist_version (JSONB) 
+   - resolution_chosen (ENUM: 'canvas', 'todolist')
+   - resolved_by (UUID, foreign key to users.id)
+   - resolved_at (TIMESTAMP, default now())
+   - metadata (JSONB)
+
+SAMPLE DATA:
+Insert 1 test user, 3 containers with different colors, and 10 ideas distributed across containers with various states (some in staging tables to test conflict scenarios).
+
+BASIC EXPRESS SERVER:
+- CORS enabled
+- JSON body parser
+- Static file serving for React build
+- Basic error handling middleware
+- Health check endpoint at /api/health
+
+Include proper TypeScript configuration for both frontend and backend, ESLint setup, and all necessary dependencies in package.json.
