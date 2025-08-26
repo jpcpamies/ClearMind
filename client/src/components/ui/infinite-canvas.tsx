@@ -52,14 +52,18 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        {/* Dynamic background grid */}
+        {/* Dynamic background grid - extends beyond viewport */}
         <div
-          className="absolute inset-0"
+          className="absolute"
           style={{
+            left: '-50vw',
+            top: '-50vh', 
+            width: '200vw',
+            height: '200vh',
             backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0)',
             backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
             backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
-            zIndex: -1,
+            zIndex: -10,
           }}
         />
         {ideas.map((idea) => (

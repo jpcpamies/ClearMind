@@ -171,8 +171,8 @@ export default function Canvas() {
             />
           </div>
 
-          {/* Canvas */}
-          <div className="canvas-content absolute inset-0 pt-24 pl-80 pr-6 pb-6">
+          {/* Canvas - Full screen background */}
+          <div className="canvas-content absolute inset-0">
             <InfiniteCanvas
               ref={canvasRef}
               ideas={ideas}
