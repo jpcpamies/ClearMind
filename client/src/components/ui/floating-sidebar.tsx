@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, MoreHorizontal, Edit2, List, Trash2 } from "lucide-react";
-import logoUrl from "@assets/logo-clearming_1756233885620.webp";
+import logoUrl from "@assets/logo-clearming_1756234542415.png";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Label } from "./label";
@@ -83,7 +83,11 @@ export default function FloatingSidebar({
     <div className="bg-white rounded-lg p-4 w-80 shadow-lg animate-slideUp">
       {/* Logo */}
       <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-900">ClearMind</h1>
+        <img 
+          src={logoUrl} 
+          alt="ClearMind Logo" 
+          className="w-[140px] h-auto"
+        />
       </div>
 
       {/* Greeting */}
