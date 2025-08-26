@@ -62,7 +62,13 @@ export function useAuth() {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      const response = await apiRequest('POST', '/api/auth/login', credentials);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -71,6 +77,9 @@ export function useAuth() {
       
       const data: AuthResponse = await response.json();
       setUser(data.user, data.token);
+      
+      // Force page reload to trigger auth check
+      window.location.reload();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Login failed');
       throw error;
