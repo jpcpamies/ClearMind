@@ -131,7 +131,7 @@ export default function Canvas() {
     <div className="relative w-screen h-screen overflow-hidden">
       {/* Top Navigation Toggle */}
       <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30">
-        <div className="glassmorphism rounded-lg p-1 card-shadow">
+        <div className="frosted-glass-bg rounded-lg p-1">
           <div className="flex space-x-1">
             <button
               data-testid="button-canvas-view"
@@ -162,7 +162,7 @@ export default function Canvas() {
       {currentView === "canvas" ? (
         <>
           {/* Left Floating Sidebar */}
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute top-3 left-3 z-20">
             <FloatingSidebar
               groups={groups}
               onNewIdea={handleNewIdea}

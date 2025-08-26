@@ -17,7 +17,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
   };
 
   return (
-    <div className="glassmorphism rounded-lg p-2 card-shadow">
+    <div className="frosted-glass-bg rounded-lg p-2">
       <div className="flex flex-col space-y-1">
         <Button
           variant="ghost"

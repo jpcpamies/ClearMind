@@ -80,9 +80,9 @@ export default function FloatingSidebar({
   };
 
   return (
-    <div className="bg-white rounded-lg p-4 w-80 shadow-lg animate-slideUp">
+    <div className="frosted-glass-bg rounded-lg p-3 w-80 animate-slideUp" style={{height: 'calc(100vh - 24px)'}}>
       {/* Logo */}
-      <div className="mb-4">
+      <div className="mt-[140px] mb-4">
         <img 
           src={logoUrl} 
           alt="ClearMind Logo" 

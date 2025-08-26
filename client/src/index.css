@@ -94,6 +94,12 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.frosted-glass-bg {
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px) saturate(180%) contrast(110%) brightness(120%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
 .card-shadow {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
