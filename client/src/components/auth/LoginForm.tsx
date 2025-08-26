@@ -50,8 +50,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           className="mx-auto mb-6" 
           style={{ width: '260px' }}
         />
-        <h1 className="text-2xl font-bold text-gray-900">Welcome to ClearMind ✨</h1>
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="text-lg text-gray-600 mt-2">
           Your space to think clearly and stay organized.
         </p>
       </div>
