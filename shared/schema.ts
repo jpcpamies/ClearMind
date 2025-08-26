@@ -73,10 +73,32 @@ export const insertTodoSectionSchema = createInsertSchema(todoSections).omit({
   createdAt: true,
 });
 
+// User storage table for email/password authentication
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  username: varchar("username").unique().notNull(),
+  displayName: varchar("display_name").notNull(),
+  emailVerified: boolean("email_verified").default(false),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertIdea = z.infer<typeof insertIdeaSchema>;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type InsertTodoSection = z.infer<typeof insertTodoSectionSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Idea = typeof ideas.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type TodoSection = typeof todoSections.$inferSelect;
+export type User = typeof users.$inferSelect;

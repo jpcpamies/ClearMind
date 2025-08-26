@@ -5,6 +5,9 @@ import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema } from "@s
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  const authRoutes = await import('./routes/auth');
+  app.use('/api/auth', authRoutes.default);
   // Ideas routes
   app.get("/api/ideas", async (req, res) => {
     try {
