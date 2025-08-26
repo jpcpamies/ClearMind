@@ -1,9 +1,22 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Plus, Upload, Search, FileText } from "lucide-react";
+import { X, Plus, Flag, List, MoreHorizontal, Check } from "lucide-react";
 import {
   Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "./dialog";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Checkbox } from "./checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Group, Idea, TodoSection } from "@shared/schema";
@@ -16,6 +29,18 @@ interface TodoListModalProps {
   ideas: Idea[];
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
 }
+
+const priorityColors = {
+  low: "bg-gray-100 text-gray-700",
+  medium: "bg-yellow-100 text-yellow-700",
+  high: "bg-orange-100 text-orange-700",
+  critical: "bg-red-100 text-red-700",
+};
+
+const sectionIcons = {
+  "High Priority": Flag,
+  "General Tasks": List,
+};
 
 export default function TodoListModal({
   isOpen,
@@ -32,483 +57,326 @@ export default function TodoListModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch todo sections for this group
+  const { data: todoSections = [] } = useQuery<TodoSection[]>({
+    queryKey: ["/api/groups", groupId, "todo-sections"],
+    enabled: !!groupId,
+  });
+
+  // Create new task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: any) => {
+      const response = await apiRequest("POST", "/api/ideas", taskData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      setNewTaskText("");
+      setNewTaskPriority("medium");
+      toast({
+        title: "Success",
+        description: "Task created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create task",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create section mutation
+  const createSectionMutation = useMutation({
+    mutationFn: async (sectionData: any) => {
+      const response = await apiRequest("POST", "/api/todo-sections", sectionData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "todo-sections"] });
+      setNewSectionName("");
+      toast({
+        title: "Success",
+        description: "Section created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create section",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateTask = () => {
+    if (!newTaskText.trim() || !groupId) return;
+
+    createTaskMutation.mutate({
+      title: newTaskText,
+      priority: newTaskPriority,
+      groupId,
+      canvasX: Math.random() * 400,
+      canvasY: Math.random() * 400,
+    });
+  };
+
+  const handleCreateSection = () => {
+    if (!newSectionName.trim() || !groupId) return;
+
+    createSectionMutation.mutate({
+      groupId,
+      name: newSectionName,
+      order: todoSections.length,
+    });
+  };
+
+  const handleTaskToggle = (ideaId: string, completed: boolean) => {
+    onIdeaUpdate(ideaId, { completed });
+  };
+
+  const getColorClass = (color: string) => {
+    const colorMap = {
+      purple: "bg-purple-500",
+      blue: "bg-blue-500",
+      green: "bg-green-500",
+      orange: "bg-orange-500",
+    };
+    return colorMap[color as keyof typeof colorMap] || "bg-purple-500";
+  };
+
+  // Group ideas by priority for default sections
+  const highPriorityIdeas = ideas.filter(idea => idea.priority === "high" || idea.priority === "critical");
+  const generalIdeas = ideas.filter(idea => idea.priority === "low" || idea.priority === "medium");
+
   if (!group) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <div
-        className="fixed inset-0 z-[1000] flex items-center justify-center"
-        style={{
-          backgroundColor: "rgba(0,0,0,0.45)",
-          backdropFilter: "blur(4px)",
-        }}
-        onClick={onClose}
-      >
-        <div
-          className="relative overflow-hidden"
-          style={{
-            width: "72vw",
-            maxWidth: "1120px",
-            height: "78vh", 
-            maxHeight: "820px",
-            borderRadius: "12px",
-            backgroundColor: "#ffffff",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
-            padding: "24px 24px 16px 24px",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center" style={{ gap: "12px" }}>
-              <div
-                style={{
-                  width: "22px",
-                  height: "22px",
-                  backgroundColor: "#000",
-                  borderRadius: "4px",
-                }}
-              />
-              <h1
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: "#1f1f1f",
-                  margin: 0,
-                }}
-              >
-                NotebookLM
-              </h1>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
+              <DialogTitle className="text-xl">{group.name}</DialogTitle>
             </div>
-            
-            <div className="flex items-center" style={{ gap: "12px" }}>
-              {/* Action Pill */}
-              <button
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "999px",
-                  fontSize: "14px",
-                  backgroundColor: "#EEF4FF",
-                  color: "#3B82F6",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#E3EEFF";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#EEF4FF";
-                }}
-              >
-                <Search style={{ width: "14px", height: "14px" }} />
-                Descubrir fuentes
-              </button>
-
-              {/* Close Button */}
-              <button
-                data-testid="button-close-todo-modal"
-                onClick={onClose}
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#6b7280",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F3F4F6";
-                  e.currentTarget.style.color = "#111827";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "#6b7280";
-                }}
-              >
-                <X style={{ width: "16px", height: "16px" }} />
-              </button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="button-close-todo-modal"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
+        </DialogHeader>
 
-          {/* Subtitle */}
-          <h2
-            style={{
-              fontSize: "20px",
-              fontWeight: "700",
-              marginTop: "12px",
-              marginBottom: "12px",
-              color: "#1f1f1f",
-            }}
-          >
-            Añadir fuentes
-          </h2>
-
-          {/* Body with scrollable content */}
-          <div
-            style={{
-              paddingTop: "12px",
-              height: "calc(100% - 120px)",
-              overflowY: "auto",
-            }}
-          >
-            {/* Intro Text */}
-            <p
-              style={{
-                fontSize: "14px",
-                lineHeight: "1.5",
-                color: "#374151",
-                marginBottom: "24px",
+        {/* Section Creation */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+            <Input
+              data-testid="input-new-section"
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              placeholder="Create a new section..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateSection();
+                }
               }}
+            />
+            <Button
+              data-testid="button-create-section"
+              onClick={handleCreateSection}
+              size="sm"
+              disabled={!newSectionName.trim()}
             >
-              Agrega fuentes de información para que NotebookLM pueda ayudarte a organizar y analizar tus tareas.
-            </p>
-
-            {/* Dropzone */}
-            <div
-              style={{
-                height: "240px",
-                border: "2px dashed #D1D5DB",
-                borderRadius: "12px",
-                backgroundColor: "#ffffff",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "32px",
-              }}
-            >
-              <Upload
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  color: "#6366F1",
-                  marginBottom: "8px",
-                }}
-              />
-              <h3
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color: "#1f2937",
-                  marginTop: "8px",
-                  marginBottom: "4px",
-                }}
-              >
-                Subir fuentes
-              </h3>
-              <p
-                style={{
-                  fontSize: "14px",
-                  color: "#4b5563",
-                  marginBottom: "12px",
-                }}
-              >
-                Arrastra y suelta o selecciona un archivo
-              </p>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  textAlign: "center",
-                  marginTop: "12px",
-                }}
-              >
-                Tipos de archivo admitidos: PDF, txt, Markdown, Audio (por ejemplo, MP3)
-              </p>
-            </div>
-
-            {/* Sources Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "16px",
-                marginBottom: "32px",
-              }}
-            >
-              {/* Google Drive Card */}
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  backgroundColor: "#ffffff",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#111827",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <FileText style={{ width: "16px", height: "16px" }} />
-                  Google Drive
-                </h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <button
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      borderRadius: "999px",
-                      fontSize: "13px",
-                      backgroundColor: "#F3F4F6",
-                      color: "#111827",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E5E7EB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F3F4F6";
-                    }}
-                  >
-                    <div style={{ width: "4px", height: "4px", backgroundColor: "#4B5563", borderRadius: "50%" }} />
-                    Documentos de Google
-                  </button>
-                  <button
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      borderRadius: "999px",
-                      fontSize: "13px",
-                      backgroundColor: "#F3F4F6",
-                      color: "#111827",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E5E7EB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F3F4F6";
-                    }}
-                  >
-                    <div style={{ width: "4px", height: "4px", backgroundColor: "#4B5563", borderRadius: "50%" }} />
-                    Presentaciones de Google
-                  </button>
-                </div>
-              </div>
-
-              {/* Link Card */}
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  backgroundColor: "#ffffff",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#111827",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <Search style={{ width: "16px", height: "16px" }} />
-                  Enlace
-                </h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <button
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      borderRadius: "999px",
-                      fontSize: "13px",
-                      backgroundColor: "#F3F4F6",
-                      color: "#111827",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E5E7EB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F3F4F6";
-                    }}
-                  >
-                    <div style={{ width: "4px", height: "4px", backgroundColor: "#4B5563", borderRadius: "50%" }} />
-                    Sitio web
-                  </button>
-                  <button
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      borderRadius: "999px",
-                      fontSize: "13px",
-                      backgroundColor: "#F3F4F6",
-                      color: "#111827",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E5E7EB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F3F4F6";
-                    }}
-                  >
-                    <div style={{ width: "4px", height: "4px", backgroundColor: "#4B5563", borderRadius: "50%" }} />
-                    YouTube
-                  </button>
-                </div>
-              </div>
-
-              {/* Paste Text Card */}
-              <div
-                style={{
-                  border: "1px solid #E5E7EB",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  backgroundColor: "#ffffff",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#111827",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <FileText style={{ width: "16px", height: "16px" }} />
-                  Pegar texto
-                </h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <button
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      borderRadius: "999px",
-                      fontSize: "13px",
-                      backgroundColor: "#F3F4F6",
-                      color: "#111827",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#E5E7EB";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F3F4F6";
-                    }}
-                  >
-                    <div style={{ width: "4px", height: "4px", backgroundColor: "#4B5563", borderRadius: "50%" }} />
-                    Texto copiado
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "16px",
-              left: "24px",
-              right: "24px",
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              paddingTop: "16px",
-              borderTop: "1px solid #E5E7EB",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            {/* Left side - Progress */}
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px" }}>
-              <span
-                style={{
-                  fontSize: "13px",
-                  color: "#374151",
-                }}
-              >
-                Límite de fuentes
-              </span>
-              <div
-                style={{
-                  height: "8px",
-                  flex: 1,
-                  maxWidth: "120px",
-                  backgroundColor: "#E5E7EB",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: "0%",
-                    backgroundColor: "#C7D2FE",
-                  }}
-                />
-              </div>
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                }}
-              >
-                0/300
-              </span>
-            </div>
-
-            {/* Right side - CTA */}
-            <button
-              style={{
-                height: "40px",
-                padding: "0 24px",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: "600",
-                backgroundColor: "#E5E7EB",
-                color: "#9CA3AF",
-                border: "none",
-                cursor: "not-allowed",
-              }}
-              disabled
-            >
-              Sube una fuente para empezar
-            </button>
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-      </div>
+
+        {/* Tasks List */}
+        <div className="space-y-6">
+          {/* High Priority Section */}
+          {highPriorityIdeas.length > 0 && (
+            <div className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground flex items-center space-x-2">
+                  <Flag className="w-4 h-4 text-red-500" />
+                  <span>High Priority</span>
+                </h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-2 ml-6">
+                {highPriorityIdeas.map((idea) => (
+                  <div
+                    key={idea.id}
+                    data-testid={`todo-task-${idea.id}`}
+                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
+                  >
+                    <Checkbox
+                      checked={idea.completed || false}
+                      onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
+                      className="rounded"
+                    />
+                    <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
+                      {idea.title}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
+                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* General Tasks Section */}
+          {generalIdeas.length > 0 && (
+            <div className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground flex items-center space-x-2">
+                  <List className="w-4 h-4 text-blue-500" />
+                  <span>General Tasks</span>
+                </h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-2 ml-6">
+                {generalIdeas.map((idea) => (
+                  <div
+                    key={idea.id}
+                    data-testid={`todo-task-${idea.id}`}
+                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
+                  >
+                    <Checkbox
+                      checked={idea.completed || false}
+                      onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
+                      className="rounded"
+                    />
+                    <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
+                      {idea.title}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
+                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Sections */}
+          {todoSections.map((section) => (
+            <div key={section.id} className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground">{section.name}</h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="ml-6">
+                <p className="text-sm text-muted-foreground">Custom section tasks will appear here</p>
+              </div>
+            </div>
+          ))}
+
+          {ideas.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No tasks in this todolist yet.</p>
+              <p className="text-sm mt-1">Create a task below to get started.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add New Task */}
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+            <Input
+              data-testid="input-new-task"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="Create a new task..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateTask();
+                }
+              }}
+            />
+            <Select value={newTaskPriority} onValueChange={(value: any) => setNewTaskPriority(value)}>
+              <SelectTrigger className="w-32" data-testid="select-new-task-priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              data-testid="button-create-task"
+              onClick={handleCreateTask}
+              size="sm"
+              disabled={!newTaskText.trim()}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-between items-center pt-4 border-t border-border">
+          <div className="flex space-x-2">
+            <Button variant="secondary" size="sm">
+              Export TodoList
+            </Button>
+            <Button variant="destructive" size="sm">
+              Delete TodoList
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center space-x-1">
+            <Check className="w-3 h-3" />
+            <span>Sync Priority: High</span>
+          </div>
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }

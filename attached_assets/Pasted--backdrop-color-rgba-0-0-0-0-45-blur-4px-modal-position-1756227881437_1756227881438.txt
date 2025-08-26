@@ -1,0 +1,190 @@
+{
+  "backdrop": {
+    "color": "rgba(0,0,0,0.45)",
+    "blur": "4px"
+  },
+  "modal": {
+    "position": "centered",
+    "zIndex": 1000,
+    "width": "72vw",
+    "maxWidth": "1120px",
+    "height": "78vh",
+    "maxHeight": "820px",
+    "borderRadius": "12px",
+    "backgroundColor": "#ffffff",
+    "shadow": "0 16px 48px rgba(0,0,0,0.18)",
+    "padding": "24px 24px 16px 24px",
+    "overflow": "hidden",
+    "contentScroll": "auto"
+  },
+  "header": {
+    "layout": "row",
+    "align": "center",
+    "gap": "12px",
+    "logo": {
+      "size": "22px",
+      "style": "monochrome"
+    },
+    "title": {
+      "text": "NotebookLM",
+      "fontSize": "18px",
+      "fontWeight": "700",
+      "color": "#1f1f1f"
+    },
+    "subtitle": {
+      "text": "Añadir fuentes",
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "marginTop": "12px",
+      "color": "#1f1f1f"
+    },
+    "actionPill": {
+      "text": "Descubrir fuentes",
+      "position": "top-right",
+      "padding": "8px 12px",
+      "borderRadius": "999px",
+      "fontSize": "14px",
+      "icon": "swap/search",
+      "bg": "#EEF4FF",
+      "color": "#3B82F6",
+      "hoverBg": "#E3EEFF"
+    },
+    "closeButton": {
+      "shape": "circle",
+      "size": "32px",
+      "icon": "x",
+      "position": "top-right-corner",
+      "color": "#6b7280",
+      "hoverColor": "#111827",
+      "bgHover": "#F3F4F6"
+    }
+  },
+  "body": {
+    "paddingTop": "12px",
+    "textIntro": {
+      "fontSize": "14px",
+      "lineHeight": "1.5",
+      "color": "#374151"
+    },
+    "dropzone": {
+      "area": {
+        "height": "240px",
+        "border": "2px dashed #D1D5DB",
+        "borderRadius": "12px",
+        "background": "#ffffff"
+      },
+      "icon": {
+        "type": "upload",
+        "size": "32px",
+        "color": "#6366F1"
+      },
+      "title": {
+        "text": "Subir fuentes",
+        "fontSize": "14px",
+        "fontWeight": "600",
+        "color": "#1f2937",
+        "marginTop": "8px"
+      },
+      "helperText": {
+        "text": "Arrastra y suelta o selecciona un archivo",
+        "fontSize": "14px",
+        "color": "#4b5563"
+      },
+      "filetypesText": {
+        "text": "Tipos de archivo admitidos: PDF, txt, Markdown, Audio (por ejemplo, MP3)",
+        "fontSize": "12px",
+        "color": "#6b7280",
+        "marginTop": "12px"
+      }
+    },
+    "sourcesGrid": {
+      "layout": "grid",
+      "columns": 3,
+      "gap": "16px",
+      "card": {
+        "border": "1px solid #E5E7EB",
+        "borderRadius": "12px",
+        "padding": "16px",
+        "bg": "#ffffff",
+        "title": {
+          "fontSize": "14px",
+          "fontWeight": "700",
+          "color": "#111827",
+          "iconLeft": true
+        },
+        "chip": {
+          "height": "28px",
+          "padding": "0 10px",
+          "gap": "6px",
+          "borderRadius": "999px",
+          "fontSize": "13px",
+          "bg": "#F3F4F6",
+          "color": "#111827",
+          "iconColor": "#4B5563",
+          "hoverBg": "#E5E7EB"
+        }
+      },
+      "columnsDetail": [
+        {
+          "name": "Google Drive",
+          "chips": ["Documentos de Google", "Presentaciones de Google"]
+        },
+        {
+          "name": "Enlace",
+          "chips": ["Sitio web", "YouTube"]
+        },
+        {
+          "name": "Pegar texto",
+          "chips": ["Texto copiado"]
+        }
+      ]
+    }
+  },
+  "footer": {
+    "layout": "row",
+    "align": "center",
+    "gap": "16px",
+    "limitLabel": {
+      "text": "Límite de fuentes",
+      "fontSize": "13px",
+      "color": "#374151"
+    },
+    "progressBar": {
+      "height": "8px",
+      "radius": "8px",
+      "trackColor": "#E5E7EB",
+      "fillColor": "#C7D2FE",
+      "value": 0,
+      "max": 300
+    },
+    "counter": {
+      "text": "0/300",
+      "fontSize": "12px",
+      "color": "#6b7280"
+    },
+    "primaryCta": {
+      "text": "Sube una fuente para empezar",
+      "state": "disabled",
+      "height": "40px",
+      "borderRadius": "10px",
+      "fontWeight": "600",
+      "bg": "#E5E7EB",
+      "color": "#9CA3AF"
+    }
+  },
+  "responsive": {
+    "breakpoints": {
+      "1024px": {
+        "modal.width": "86vw",
+        "sourcesGrid.columns": 2
+      },
+      "640px": {
+        "modal.width": "94vw",
+        "modal.height": "84vh",
+        "padding": "16px",
+        "sourcesGrid.columns": 1
+      }
+    },
+    "scrollStrategy": "body-locked, modal-body-scrolls"
+  }
+}
