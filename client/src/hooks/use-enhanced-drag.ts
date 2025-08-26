@@ -25,7 +25,7 @@ interface Position {
 
 interface UseEnhancedDragProps {
   onDrop: (itemId: string, position: Position) => void;
-  ideas: Array<{ id: string; canvasX?: number; canvasY?: number }>;
+  ideas: Array<{ id: string; canvasX?: number | null; canvasY?: number | null }>;
 }
 
 const initialDragState: DragState = {

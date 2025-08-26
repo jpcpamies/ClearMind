@@ -121,14 +121,14 @@ export default function Canvas() {
 
   if (ideasLoading || groupsLoading) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-canvas-bg">
+      <div className="w-screen h-screen flex items-center justify-center">
         <div className="text-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-screen h-screen bg-canvas-bg overflow-hidden">
+    <div className="relative w-screen h-screen overflow-hidden">
       {/* Top Navigation Toggle */}
       <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30">
         <div className="glassmorphism rounded-lg p-1 card-shadow">

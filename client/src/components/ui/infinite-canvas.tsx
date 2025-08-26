@@ -52,6 +52,16 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
+        {/* Dynamic background grid */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0)',
+            backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+            backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+            zIndex: -1,
+          }}
+        />
         {ideas.map((idea) => (
           <IdeaCard
             key={idea.id}

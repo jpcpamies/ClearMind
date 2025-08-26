@@ -1,0 +1,30 @@
+Modify the `InfiniteCanvas` component in `client/src/components/ui/infinite-canvas.tsx` to display a dynamic background grid of dots that responds to the `zoom` and `panOffset` props.
+
+Here's the plan:
+
+1.  **Remove the static background grid CSS:**
+    *   In `client/src/index.css`, remove the entire `.canvas-bg` CSS rule (lines 85-88).
+    ```css
+    85|.canvas-bg {
+    86|  background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0);
+    87|  background-size: 20px 20px;
+    88|}
+    ```
+    *   In `client/src/pages/canvas.tsx`, remove the `bg-canvas-bg` class from the `div` that wraps the `InfiniteCanvas` component (line 179). It will likely look like this:
+    ```tsx
+    179|          <div className="canvas-content absolute inset-0 pt-24 pl-80 pr-6 pb-6 bg-canvas-bg">
+    ```
+    And should be changed to:
+    ```tsx
+    179|          <div className="canvas-content absolute inset-0 pt-24 pl-80 pr-6 pb-6">
+    ```
+
+2.  **Add a dynamic background grid within `InfiniteCanvas.tsx`:**
+    *   Inside the main `div` of the `InfiniteCanvas` component (the one with `ref={canvasRef}` and `data-testid="infinite-canvas"`), add a new `div` to serve as the background grid. This `div` should be absolutely positioned and fill the entire parent.
+    *   Apply inline styles to this new `div` to control the background dots dynamically.
+    *   The `background-image` will be `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0)`.
+    *   The `background-size` property should be dynamic, calculated as `${20 * zoom}px ${20 * zoom}px`. This will make the dots appear to spread out as you zoom in and get closer as you zoom out.
+    *   The `background-position` property should also be dynamic, calculated as `${panOffset.x}px ${panOffset.y}px`. This will make the dots pan with the canvas.
+    *   Ensure this background grid `div` has a lower `z-index` than the `IdeaCard` components (e.g., `z-index: -1`).
+
+This approach will ensure the dot grid scales and translates correctly with the canvas, making the dots appear to get closer/farther depending on the zoom percentage, directly addressing your requirement for dynamic dot movement.
