@@ -30,7 +30,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     formState: { errors, isValid },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
   const onSubmit = async (data: LoginFormData) => {

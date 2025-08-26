@@ -56,7 +56,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     formState: { errors, isValid },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: 'onChange',
+    mode: 'onBlur',
   });
 
   const password = watch('password', '');
