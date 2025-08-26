@@ -1,0 +1,382 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { X, Plus, Flag, List, MoreHorizontal, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./dialog";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Checkbox } from "./checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Group, Idea, TodoSection } from "@shared/schema";
+
+interface TodoListModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  groupId: string | null;
+  group: Group | null;
+  ideas: Idea[];
+  onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
+}
+
+const priorityColors = {
+  low: "bg-gray-100 text-gray-700",
+  medium: "bg-yellow-100 text-yellow-700",
+  high: "bg-orange-100 text-orange-700",
+  critical: "bg-red-100 text-red-700",
+};
+
+const sectionIcons = {
+  "High Priority": Flag,
+  "General Tasks": List,
+};
+
+export default function TodoListModal({
+  isOpen,
+  onClose,
+  groupId,
+  group,
+  ideas,
+  onIdeaUpdate,
+}: TodoListModalProps) {
+  const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [newSectionName, setNewSectionName] = useState("");
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch todo sections for this group
+  const { data: todoSections = [] } = useQuery<TodoSection[]>({
+    queryKey: ["/api/groups", groupId, "todo-sections"],
+    enabled: !!groupId,
+  });
+
+  // Create new task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: any) => {
+      const response = await apiRequest("POST", "/api/ideas", taskData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      setNewTaskText("");
+      setNewTaskPriority("medium");
+      toast({
+        title: "Success",
+        description: "Task created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create task",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create section mutation
+  const createSectionMutation = useMutation({
+    mutationFn: async (sectionData: any) => {
+      const response = await apiRequest("POST", "/api/todo-sections", sectionData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "todo-sections"] });
+      setNewSectionName("");
+      toast({
+        title: "Success",
+        description: "Section created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create section",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateTask = () => {
+    if (!newTaskText.trim() || !groupId) return;
+
+    createTaskMutation.mutate({
+      title: newTaskText,
+      priority: newTaskPriority,
+      groupId,
+      canvasX: Math.random() * 400,
+      canvasY: Math.random() * 400,
+    });
+  };
+
+  const handleCreateSection = () => {
+    if (!newSectionName.trim() || !groupId) return;
+
+    createSectionMutation.mutate({
+      groupId,
+      name: newSectionName,
+      order: todoSections.length,
+    });
+  };
+
+  const handleTaskToggle = (ideaId: string, completed: boolean) => {
+    onIdeaUpdate(ideaId, { completed });
+  };
+
+  const getColorClass = (color: string) => {
+    const colorMap = {
+      purple: "bg-purple-500",
+      blue: "bg-blue-500",
+      green: "bg-green-500",
+      orange: "bg-orange-500",
+    };
+    return colorMap[color as keyof typeof colorMap] || "bg-purple-500";
+  };
+
+  // Group ideas by priority for default sections
+  const highPriorityIdeas = ideas.filter(idea => idea.priority === "high" || idea.priority === "critical");
+  const generalIdeas = ideas.filter(idea => idea.priority === "low" || idea.priority === "medium");
+
+  if (!group) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
+              <DialogTitle className="text-xl">{group.name}</DialogTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid="button-close-todo-modal"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+
+        {/* Section Creation */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+            <Input
+              data-testid="input-new-section"
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              placeholder="Create a new section..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateSection();
+                }
+              }}
+            />
+            <Button
+              data-testid="button-create-section"
+              onClick={handleCreateSection}
+              size="sm"
+              disabled={!newSectionName.trim()}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Tasks List */}
+        <div className="space-y-6">
+          {/* High Priority Section */}
+          {highPriorityIdeas.length > 0 && (
+            <div className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground flex items-center space-x-2">
+                  <Flag className="w-4 h-4 text-red-500" />
+                  <span>High Priority</span>
+                </h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-2 ml-6">
+                {highPriorityIdeas.map((idea) => (
+                  <div
+                    key={idea.id}
+                    data-testid={`todo-task-${idea.id}`}
+                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
+                  >
+                    <Checkbox
+                      checked={idea.completed}
+                      onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
+                      className="rounded"
+                    />
+                    <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
+                      {idea.title}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
+                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* General Tasks Section */}
+          {generalIdeas.length > 0 && (
+            <div className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground flex items-center space-x-2">
+                  <List className="w-4 h-4 text-blue-500" />
+                  <span>General Tasks</span>
+                </h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-2 ml-6">
+                {generalIdeas.map((idea) => (
+                  <div
+                    key={idea.id}
+                    data-testid={`todo-task-${idea.id}`}
+                    className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent/50"
+                  >
+                    <Checkbox
+                      checked={idea.completed}
+                      onCheckedChange={(checked) => handleTaskToggle(idea.id, !!checked)}
+                      className="rounded"
+                    />
+                    <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
+                      {idea.title}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
+                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Sections */}
+          {todoSections.map((section) => (
+            <div key={section.id} className="section">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-foreground">{section.name}</h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Edit Section</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Delete Section</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="ml-6">
+                <p className="text-sm text-muted-foreground">Custom section tasks will appear here</p>
+              </div>
+            </div>
+          ))}
+
+          {ideas.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No tasks in this todolist yet.</p>
+              <p className="text-sm mt-1">Create a task below to get started.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add New Task */}
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center space-x-2">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+            <Input
+              data-testid="input-new-task"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="Create a new task..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreateTask();
+                }
+              }}
+            />
+            <Select value={newTaskPriority} onValueChange={(value: any) => setNewTaskPriority(value)}>
+              <SelectTrigger className="w-32" data-testid="select-new-task-priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              data-testid="button-create-task"
+              onClick={handleCreateTask}
+              size="sm"
+              disabled={!newTaskText.trim()}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex justify-between items-center pt-4 border-t border-border">
+          <div className="flex space-x-2">
+            <Button variant="secondary" size="sm">
+              Export TodoList
+            </Button>
+            <Button variant="destructive" size="sm">
+              Delete TodoList
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground flex items-center space-x-1">
+            <Check className="w-3 h-3" />
+            <span>Sync Priority: High</span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
