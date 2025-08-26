@@ -10,7 +10,7 @@ import {
 } from './dropdown-menu';
 import { 
   LogOut, 
-  ChevronDown 
+  MoreHorizontal 
 } from 'lucide-react';
 
 export default function FloatingUserProfile() {
@@ -57,15 +57,12 @@ export default function FloatingUserProfile() {
               
               {/* Username - hidden on mobile */}
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                <p className="text-sm font-medium text-gray-900">
                   {user.displayName}
-                </p>
-                <p className="text-xs text-white/80" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                  {user.email}
                 </p>
               </div>
               
-              <ChevronDown className="h-4 w-4 text-white/80 hidden sm:block" />
+              <MoreHorizontal className="h-4 w-4 text-gray-600 hidden sm:block" />
             </div>
           </Button>
         </DropdownMenuTrigger>
