@@ -443,7 +443,10 @@ export default function Canvas() {
       {/* Modals */}
       <IdeaModal
         isOpen={isIdeaModalOpen}
-        onClose={() => setIsIdeaModalOpen(false)}
+        onClose={() => {
+          setIsIdeaModalOpen(false);
+          setEditingIdeaId(null);
+        }}
         onSubmit={handleIdeaModalSubmit}
         groups={groups}
         editingIdea={editingIdeaId ? ideas.find(i => i.id === editingIdeaId) : null}
