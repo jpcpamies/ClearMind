@@ -164,21 +164,21 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
     const rect = element.getBoundingClientRect();
     const isMultiSelect = e.ctrlKey || e.metaKey;
     
-    // Calculate precise offset from mouse to card corner
-    const offset = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-
     // Find current idea position and convert to screen coordinates
     const currentIdea = ideas.find(idea => idea.id === item.id);
     const canvasPos = { 
       x: currentIdea?.canvasX || 0, 
       y: currentIdea?.canvasY || 0 
     };
-    const currentPos = {
+    const currentScreenPos = {
       x: canvasPos.x * zoom + panOffset.x,
       y: canvasPos.y * zoom + panOffset.y
+    };
+
+    // Calculate precise offset from mouse to card's current screen position
+    const offset = {
+      x: e.clientX - currentScreenPos.x,
+      y: e.clientY - currentScreenPos.y,
     };
 
     let selectedCards = new Set<string>();
