@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth-demo';
 import AuthLayout from './AuthLayout';
 
 interface ProtectedRouteProps {
