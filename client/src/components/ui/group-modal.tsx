@@ -105,6 +105,16 @@ export default function GroupModal({
     setSelectedColor("purple");
   };
 
+  const getHexColor = (colorName: string) => {
+    const colorMap = {
+      purple: "#8B5CF6",
+      blue: "#3B82F6",
+      green: "#10B981",
+      orange: "#F59E0B",
+    };
+    return colorMap[colorName as keyof typeof colorMap] || "#8B5CF6";
+  };
+
   const handleSubmit = () => {
     if (!groupName.trim()) return;
 
@@ -126,16 +136,18 @@ export default function GroupModal({
       return;
     }
 
+    const hexColor = getHexColor(selectedColor);
+
     if (editingGroup) {
       updateGroupMutation.mutate({
         id: editingGroup.id,
         name: groupName.trim(),
-        color: selectedColor,
+        color: hexColor,
       });
     } else {
       createGroupMutation.mutate({
         name: groupName.trim(),
-        color: selectedColor,
+        color: hexColor,
       });
     }
   };
@@ -151,7 +163,7 @@ export default function GroupModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md z-[60]">
         <DialogHeader className="pb-4 border-b border-border">
           <DialogTitle className="text-xl">
             {editingGroup ? "Edit Group" : "Create New Group"}

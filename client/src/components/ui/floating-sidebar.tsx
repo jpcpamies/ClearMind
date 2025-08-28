@@ -89,6 +89,12 @@ export default function FloatingSidebar({
   };
 
   const getColorClass = (color: string) => {
+    // If it's already a hex color, return it
+    if (color.startsWith("#")) {
+      return color;
+    }
+    
+    // Otherwise, convert from color name to hex
     const colorMap = {
       purple: "#8B5CF6",
       blue: "#3B82F6", 
