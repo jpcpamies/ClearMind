@@ -23,9 +23,6 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
     console.log('🎯 Event details:', e.currentTarget, e.target);
     console.log('🎯 onResetView function:', onResetView);
     
-    // Add visual feedback
-    alert('Fit to canvas button clicked!');
-    
     e.preventDefault();
     e.stopPropagation();
     onResetView();

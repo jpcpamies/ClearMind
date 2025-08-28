@@ -20,6 +20,15 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
     
+    // Sync the internal ref with the forwarded ref
+    useEffect(() => {
+      if (typeof ref === 'function') {
+        ref(canvasRef.current);
+      } else if (ref) {
+        ref.current = canvasRef.current;
+      }
+    }, [ref]);
+    
     const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
         // Position is already in canvas coordinates, no conversion needed
