@@ -84,7 +84,7 @@ export default function FloatingSidebar({
     <>
       {/* Collapsed sidebar - show toggle button */}
       {isCollapsed && (
-        <div className="fixed left-4 top-4 z-50 animate-fadeIn">
+        <div className="fixed left-4 top-4 z-[40] animate-fadeIn">
           <Button
             onClick={() => setIsCollapsed(false)}
             className="frosted-glass-bg border-0 p-4 rounded-lg shadow-lg hover:bg-white/30 transition-all"

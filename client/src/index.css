@@ -192,12 +192,16 @@
  * =======================================
  * Layer 0: Base canvas cards (z-index: 1)
  * Layer 1: Selected cards (z-index: 10) 
- * Layer 2: UI elements (z-index: 50)
- * Layer 3: Dragging cards (z-index: 100)
- * Layer 4: Dropdowns/popovers (z-index: 500)
- * Layer 5: Modal overlays (z-index: 1000)
- * Layer 6: Modal content (z-index: 1001)
- * Layer 7: Tooltips/toasts (z-index: 9999)
+ * Layer 2: Floating UI elements (z-index: 40-49)
+ * Layer 3: Dropdowns/popovers (z-index: 50-59)
+ * Layer 4: Tooltips (z-index: 60-69)
+ * Layer 5: Toasts (z-index: 70-79)
+ * Layer 6: Dragging cards (z-index: 100)
+ * Layer 7: Modal overlays (z-index: 1000)
+ * Layer 8: Modal content (z-index: 1001)
+ * Layer 9: Modal dropdowns/popovers (z-index: 1010-1019)
+ * Layer 10: Modal tooltips (z-index: 1020-1029)
+ * Layer 11: Critical system overlays (z-index: 9999)
  */
 
 /* Professional Card Selection and Drag States */
@@ -242,6 +246,29 @@
 
 .draggable {
   cursor: move;
+}
+
+/* Z-Index Utility Classes */
+.z-canvas { z-index: 1; }
+.z-selected { z-index: 10; }
+.z-floating { z-index: 40; }
+.z-dropdown { z-index: 50; }
+.z-tooltip { z-index: 60; }
+.z-toast { z-index: 70; }
+.z-dragging { z-index: 100; }
+.z-modal-overlay { z-index: 1000; }
+.z-modal-content { z-index: 1001; }
+.z-modal-dropdown { z-index: 1010; }
+.z-modal-tooltip { z-index: 1020; }
+.z-critical { z-index: 9999; }
+
+/* Fix for dropdowns inside modals */
+[data-radix-popper-content-wrapper] {
+  z-index: 1010 !important;
+}
+
+.modal-context [data-radix-popper-content-wrapper] {
+  z-index: 1010 !important;
 }
 
 /* Utility classes */

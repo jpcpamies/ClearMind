@@ -18,7 +18,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
 
   return (
     <div 
-      className="fixed bottom-5 right-5 z-50"
+      className="fixed bottom-5 right-5 z-[40]"
       style={{
         background: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(12px)',
