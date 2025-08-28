@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus, Flag, List, MoreHorizontal, Check, Trash } from "lucide-react";
 import {
@@ -201,7 +202,8 @@ export default function TodoListModal({
   if (!group) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 border-b border-border">
           <div className="flex items-center justify-between">
@@ -432,50 +434,52 @@ export default function TodoListModal({
           </div>
         </div>
       </DialogContent>
-
-      {/* Delete Confirmation Dialog - Rendered with very high z-index */}
-      {showDeleteConfirm && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/80 z-[9998]" 
-            onClick={() => setShowDeleteConfirm(false)} 
-          />
-          {/* Confirmation Dialog */}
-          <div className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
-            <div className="flex flex-col space-y-2 text-center sm:text-left">
-              <h2 className="text-lg font-semibold">Delete TodoList</h2>
-              <p className="text-sm text-muted-foreground">
-                Are you sure you want to delete '{group?.name}'?
-                <br />
-                <span className="text-destructive font-medium">This action cannot be undone.</span>
-                {ideas.length > 0 && (
-                  <span className="block mt-2">
-                    All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-              <Button
-                variant="outline"
-                data-testid="button-cancel-delete"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                data-testid="button-confirm-delete"
-                onClick={handleDeleteTodoList}
-                disabled={deleteGroupMutation.isPending}
-              >
-                {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
-              </Button>
-            </div>
+      </Dialog>
+    
+    {/* Confirmation Dialog rendered in a portal outside of the main Dialog */}
+    {showDeleteConfirm && createPortal(
+      <>
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/80 z-[9998]" 
+          onClick={() => setShowDeleteConfirm(false)} 
+        />
+        {/* Confirmation Dialog */}
+        <div className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
+          <div className="flex flex-col space-y-2 text-center sm:text-left">
+            <h2 className="text-lg font-semibold">Delete TodoList</h2>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete '{group?.name}'?
+              <br />
+              <span className="text-destructive font-medium">This action cannot be undone.</span>
+              {ideas.length > 0 && (
+                <span className="block mt-2">
+                  All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
+                </span>
+              )}
+            </p>
           </div>
-        </>
-      )}
-    </Dialog>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+            <Button
+              variant="outline"
+              data-testid="button-cancel-delete"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              data-testid="button-confirm-delete"
+              onClick={handleDeleteTodoList}
+              disabled={deleteGroupMutation.isPending}
+            >
+              {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </>,
+      document.body
+    )}
+    </>
   );
 }
