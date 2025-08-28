@@ -1,10 +1,9 @@
 import { MoreVertical, Plus } from "lucide-react";
-import type { Group, Idea, Category } from "@shared/schema";
+import type { Group, Idea } from "@shared/schema";
 
 interface TodoListGridProps {
   groups: Group[];
   ideas: Idea[];
-  categories: Category[];
   onTodoListOpen: (groupId: string) => void;
   onCreateTodoList: () => void;
 }
@@ -16,7 +15,7 @@ const priorityColors = {
   critical: "bg-red-500",
 };
 
-export default function TodoListGrid({ groups, ideas, categories, onTodoListOpen, onCreateTodoList }: TodoListGridProps) {
+export default function TodoListGrid({ groups, ideas, onTodoListOpen, onCreateTodoList }: TodoListGridProps) {
   const getGroupStats = (groupId: string) => {
     const groupIdeas = ideas.filter(idea => idea.groupId === groupId);
     const stats: Record<string, number> = {};

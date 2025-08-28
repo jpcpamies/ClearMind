@@ -10,7 +10,7 @@ import TodoListModal from "@/components/ui/todolist-modal";
 import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
 import ZoomControls from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
-import type { Idea, Group, Category } from "@shared/schema";
+import type { Idea, Group } from "@shared/schema";
 
 type View = "canvas" | "todolist";
 
@@ -34,10 +34,6 @@ export default function Canvas() {
 
   const { data: groups = [], isLoading: groupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
-  });
-
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
   });
 
   // Calculate center point of all existing cards
@@ -364,7 +360,6 @@ export default function Canvas() {
               ref={canvasRef}
               ideas={ideas}
               groups={groups}
-              categories={categories}
               zoom={zoom}
               panOffset={panOffset}
               onIdeaUpdate={handleIdeaUpdate}
@@ -386,7 +381,6 @@ export default function Canvas() {
           <TodoListGrid
             groups={groups}
             ideas={ideas}
-            categories={categories}
             onTodoListOpen={handleTodoListOpen}
             onCreateTodoList={() => setIsCreateTodoModalOpen(true)}
           />
@@ -415,7 +409,7 @@ export default function Canvas() {
       <CreateTodoListModal
         isOpen={isCreateTodoModalOpen}
         onClose={() => setIsCreateTodoModalOpen(false)}
-        categories={categories}
+        groups={groups}
         ideas={ideas}
       />
     </div>

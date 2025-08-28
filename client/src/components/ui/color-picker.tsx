@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CATEGORY_COLORS } from "@shared/schema";
+import { GROUP_COLORS } from "@shared/schema";
 import { Check } from "lucide-react";
 
 interface ColorPickerProps {
@@ -63,7 +63,7 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
       <div className="mb-4">
         <Label className="text-xs text-gray-500 mb-2 block">Predefined Colors</Label>
         <div className="grid grid-cols-4 gap-2">
-          {CATEGORY_COLORS.map((color) => (
+          {GROUP_COLORS.map((color) => (
             <button
               key={color}
               type="button"

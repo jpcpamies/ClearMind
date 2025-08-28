@@ -22,14 +22,13 @@ import { Textarea } from "./textarea";
 import { Button } from "./button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { X } from "lucide-react";
-import type { Group, Idea, Category } from "@shared/schema";
+import type { Group, Idea } from "@shared/schema";
 
 const ideaFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "critical"]),
   groupId: z.string().optional(),
-  categoryId: z.string().optional(),
   canvasX: z.number().optional(),
   canvasY: z.number().optional(),
   completed: z.boolean().optional(),
@@ -54,10 +53,6 @@ export default function IdeaModal({
   editingIdea,
   isLoading = false,
 }: IdeaModalProps) {
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
 
   const form = useForm<IdeaFormData>({
     resolver: zodResolver(ideaFormSchema),
@@ -66,7 +61,6 @@ export default function IdeaModal({
       description: "",
       priority: "medium",
       groupId: "unassigned",
-      categoryId: "",
     },
   });
 
@@ -77,7 +71,6 @@ export default function IdeaModal({
         description: editingIdea.description || "",
         priority: editingIdea.priority || "medium",
         groupId: editingIdea.groupId || "unassigned",
-        categoryId: editingIdea.categoryId || "",
       });
     } else {
       form.reset({
@@ -85,7 +78,6 @@ export default function IdeaModal({
         description: "",
         priority: "medium",
         groupId: "unassigned",
-        categoryId: "",
       });
     }
   }, [editingIdea, form]);
@@ -94,7 +86,6 @@ export default function IdeaModal({
     const submitData = {
       ...data,
       groupId: data.groupId === "unassigned" ? undefined : data.groupId,
-      categoryId: data.categoryId || undefined,
       completed: false,
     };
     onSubmit(submitData);
@@ -160,43 +151,13 @@ export default function IdeaModal({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-idea-category">
-                        <SelectValue placeholder="Select a category..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center space-x-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                            <span>{category.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
               name="groupId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign to Group (Legacy)</FormLabel>
+                  <FormLabel>Assign to Group</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-idea-group">

@@ -14,23 +14,23 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Category, Idea } from "@shared/schema";
+import type { Group, Idea } from "@shared/schema";
 
 interface CreateTodoListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  categories: Category[];
+  groups: Group[];
   ideas: Idea[];
 }
 
 export default function CreateTodoListModal({
   isOpen,
   onClose,
-  categories,
+  groups,
   ideas,
 }: CreateTodoListModalProps) {
   const [todoListName, setTodoListName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [creationType, setCreationType] = useState<"empty" | "import">("empty");
 
   const { toast } = useToast();
@@ -40,13 +40,12 @@ export default function CreateTodoListModal({
   const createTodoListMutation = useMutation({
     mutationFn: async (data: {
       name: string;
-      categoryId?: string;
+      groupId?: string;
       importIdeas: boolean;
     }) => {
       const response = await apiRequest("POST", "/api/groups", {
         name: data.name,
         color: getRandomColor(),
-        categoryId: data.categoryId,
         importIdeas: data.importIdeas,
       });
       return response.json();
@@ -81,7 +80,7 @@ export default function CreateTodoListModal({
 
   const resetForm = () => {
     setTodoListName("");
-    setSelectedCategory("");
+    setSelectedGroup("");
     setCreationType("empty");
   };
 
@@ -108,8 +107,8 @@ export default function CreateTodoListModal({
 
     createTodoListMutation.mutate({
       name: todoListName.trim(),
-      categoryId: creationType === "import" ? selectedCategory : undefined,
-      importIdeas: creationType === "import" && !!selectedCategory,
+      groupId: creationType === "import" ? selectedGroup : undefined,
+      importIdeas: creationType === "import" && !!selectedGroup,
     });
   };
 
@@ -120,17 +119,17 @@ export default function CreateTodoListModal({
     }
   };
 
-  const getCategoryColor = (categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    return category?.color || "#8B5CF6";
+  const getGroupColor = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    return group?.color || "#8B5CF6";
   };
 
-  const getSelectedCategoryIdeas = () => {
-    if (!selectedCategory) return [];
-    return ideas.filter(idea => idea.categoryId === selectedCategory);
+  const getSelectedGroupIdeas = () => {
+    if (!selectedGroup) return [];
+    return ideas.filter(idea => idea.groupId === selectedGroup);
   };
 
-  const selectedCategoryIdeas = getSelectedCategoryIdeas();
+  const selectedGroupIdeas = getSelectedGroupIdeas();
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -184,33 +183,33 @@ export default function CreateTodoListModal({
                 <RadioGroupItem value="import" id="import" />
                 <Label htmlFor="import" className="flex items-center space-x-2 cursor-pointer">
                   <FileText className="w-4 h-4" />
-                  <span>Import ideas from selected category</span>
+                  <span>Import ideas from selected group</span>
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Category Selection */}
+          {/* Group Selection */}
           {creationType === "import" && (
             <div className="space-y-2">
-              <Label>Select Category</Label>
+              <Label>Select Group</Label>
               <Select 
-                value={selectedCategory} 
-                onValueChange={setSelectedCategory}
+                value={selectedGroup} 
+                onValueChange={setSelectedGroup}
                 disabled={createTodoListMutation.isPending}
               >
-                <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="Choose a category..." />
+                <SelectTrigger data-testid="select-group">
+                  <SelectValue placeholder="Choose a group..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
                       <div className="flex items-center space-x-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
+                          style={{ backgroundColor: group.color }}
                         />
-                        <span>{category.name}</span>
+                        <span>{group.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -218,17 +217,17 @@ export default function CreateTodoListModal({
               </Select>
 
               {/* Preview */}
-              {selectedCategory && (
+              {selectedGroup && (
                 <div className="mt-3 p-3 bg-muted/50 rounded-md">
                   <p className="text-sm text-muted-foreground">
-                    {selectedCategoryIdeas.length > 0 ? (
+                    {selectedGroupIdeas.length > 0 ? (
                       <>
-                        <strong>{selectedCategoryIdeas.length}</strong> idea{selectedCategoryIdeas.length !== 1 ? 's' : ''} will be converted to tasks
+                        <strong>{selectedGroupIdeas.length}</strong> idea{selectedGroupIdeas.length !== 1 ? 's' : ''} will be converted to tasks
                         <br />
                         <span className="text-xs">Tasks will be set to Medium priority by default</span>
                       </>
                     ) : (
-                      <span>No ideas found in this category</span>
+                      <span>No ideas found in this group</span>
                     )}
                   </p>
                 </div>
@@ -252,7 +251,7 @@ export default function CreateTodoListModal({
             disabled={
               !todoListName.trim() || 
               createTodoListMutation.isPending ||
-              (creationType === "import" && !selectedCategory)
+              (creationType === "import" && !selectedGroup)
             }
           >
             {createTodoListMutation.isPending ? "Creating..." : "Create"}

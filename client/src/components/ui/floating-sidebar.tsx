@@ -9,210 +9,189 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import { CategoryModal } from "@/components/modals/CategoryModal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Category } from "@shared/schema";
+import type { Group } from "@shared/schema";
 
 interface FloatingSidebarProps {
   onNewIdea: () => void;
-  onTodoListOpen?: (groupId: string) => void; // Legacy - maintained for compatibility
+  onTodoListOpen?: (groupId: string) => void;
 }
 
 export default function FloatingSidebar({
   onNewIdea,
   onTodoListOpen,
 }: FloatingSidebarProps) {
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch categories and ideas
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
+  // Fetch groups and ideas
+  const { data: groups = [] } = useQuery<Group[]>({
+    queryKey: ["/api/groups"],
   });
 
   const { data: ideas = [] } = useQuery({
     queryKey: ["/api/ideas"],
   });
 
-  // Get idea count for each category
-  const getIdeaCount = (categoryId: string) => {
-    return (ideas as any[]).filter((idea: any) => idea.categoryId === categoryId).length;
+  // Get idea count for each group
+  const getIdeaCount = (groupId: string) => {
+    return (ideas as any[]).filter((idea: any) => idea.groupId === groupId).length;
   };
 
-  // Delete category mutation
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (categoryId: string) => {
-      const response = await apiRequest("DELETE", `/api/categories/${categoryId}`);
-      return response;
+  // Delete group mutation
+  const deleteGroupMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      await apiRequest("DELETE", `/api/groups/${groupId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
       toast({
         title: "Success",
-        description: "Category deleted successfully. Ideas moved to General category.",
+        description: "Group deleted successfully",
       });
     },
     onError: (error) => {
-      console.error("Error deleting category:", error);
+      console.error("Error deleting group:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete category",
+        title: "Error", 
+        description: "Failed to delete group",
         variant: "destructive",
       });
     },
   });
 
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setIsCategoryModalOpen(true);
+  const handleNewGroup = () => {
+    setEditingGroup(null);
+    setIsGroupModalOpen(true);
   };
 
-  const handleDeleteCategory = (category: Category) => {
-    if (category.name === "General") {
-      toast({
-        title: "Cannot Delete",
-        description: "The General category cannot be deleted.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (confirm(`Are you sure you want to delete "${category.name}"? All ideas will be moved to the General category.`)) {
-      deleteCategoryMutation.mutate(category.id);
+  const handleEditGroup = (group: Group) => {
+    setEditingGroup(group);
+    setIsGroupModalOpen(true);
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    if (confirm("Are you sure you want to delete this group?")) {
+      deleteGroupMutation.mutate(groupId);
     }
   };
 
-  const handleNewCategory = () => {
-    setEditingCategory(null);
-    setIsCategoryModalOpen(true);
+  const handleCloseGroupModal = () => {
+    setIsGroupModalOpen(false);
+    setEditingGroup(null);
   };
 
-  const handleCloseCategoryModal = () => {
-    setIsCategoryModalOpen(false);
-    setEditingCategory(null);
-  };
+  if (isCollapsed) {
+    return (
+      <div className="fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsCollapsed(false)}
+          className="bg-white/90 backdrop-blur-sm shadow-lg border-gray-200"
+          data-testid="button-expand-sidebar"
+        >
+          <PanelLeftOpen className="w-4 h-4" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* Collapsed sidebar - show toggle button */}
-      {isCollapsed && (
-        <div className="fixed left-4 top-4 z-[40] animate-fadeIn">
+      <div className="fixed top-4 left-4 z-50 w-80 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <img 
+              src={logoUrl} 
+              alt="Clear Mind Logo" 
+              className="w-8 h-8 rounded-lg"
+              data-testid="logo"
+            />
+            <span className="text-lg font-semibold text-gray-800">Clear Mind</span>
+          </div>
           <Button
-            onClick={() => setIsCollapsed(false)}
-            className="frosted-glass-bg border-0 p-4 rounded-lg shadow-lg hover:bg-white/30 transition-all"
-            data-testid="button-show-sidebar"
-          >
-            <PanelLeftOpen className="w-6 h-6 text-black" />
-          </Button>
-        </div>
-      )}
-
-      {/* Main sidebar */}
-      <div 
-        className={`frosted-glass-bg rounded-lg p-3 w-[400px] animate-slideUp transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'transform -translate-x-full opacity-0' : 'transform translate-x-0 opacity-100'
-        }`} 
-        style={{height: 'calc(100vh - 24px)'}}
-      >
-        {/* Collapse button */}
-        <div className="absolute top-3 left-3 z-10">
-          <Button
-            onClick={() => setIsCollapsed(true)}
             variant="ghost"
             size="sm"
-            className="p-1 hover:bg-white/20 rounded transition-all"
+            onClick={() => setIsCollapsed(true)}
+            className="h-6 w-6 p-0"
             data-testid="button-collapse-sidebar"
           >
-            <PanelLeftClose className="w-6 h-6 text-black" />
+            <PanelLeftClose className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Logo */}
-        <div className="mt-[140px] mb-4">
-          <img 
-            src={logoUrl} 
-            alt="ClearMind Logo" 
-            className="w-[140px] h-auto"
-          />
+        {/* Actions */}
+        <div className="flex space-x-2 mb-6">
+          <Button
+            onClick={onNewIdea}
+            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            data-testid="button-new-idea"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Idea
+          </Button>
+          <Button
+            onClick={handleNewGroup}
+            variant="outline"
+            className="flex-1"
+            data-testid="button-new-group"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Group
+          </Button>
         </div>
 
-        {/* Greeting */}
-        <div className="mb-6">
-          <h2 className="text-base font-medium text-gray-900 mb-1">
-            Hello Jordi Pamies
-          </h2>
-          <p className="text-sm text-gray-500">
-            What ideas do you have today?
-          </p>
+        {/* Section Title */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-gray-700">Groups</h3>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            {groups.length}
+          </span>
         </div>
 
-        {/* New Idea Button */}
-        <Button
-          data-testid="button-new-idea"
-          onClick={onNewIdea}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg mb-6 flex items-center justify-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Idea</span>
-        </Button>
-
-        {/* Categories Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-gray-900 font-semibold text-sm uppercase tracking-wide">
-              Categories
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-testid="button-create-category"
-              className="h-6 w-6 p-0"
-              onClick={handleNewCategory}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-
-          {/* Category List */}
-          {categories.length === 0 ? (
+        {/* Groups List */}
+        <div className="max-h-96 overflow-y-auto">
+          {groups.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No categories created yet.</p>
-              <p className="text-xs mt-1">Click + to create your first category.</p>
+              <p className="text-sm">No groups created yet.</p>
+              <p className="text-xs mt-1">Click + to create your first group.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {categories.map((category) => (
+              {groups.map((group) => (
                 <div
-                  key={category.id}
-                  data-testid={`category-item-${category.id}`}
-                  className="category-item p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
+                  key={group.id}
+                  data-testid={`group-item-${group.id}`}
+                  className="group-item p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div 
                         className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.color }}
-                        data-testid={`category-color-dot-${category.id}`}
+                        style={{ backgroundColor: group.color }}
+                        data-testid={`group-color-dot-${group.id}`}
                       />
-                      <span className="font-medium text-gray-900">{category.name}</span>
+                      <span className="font-medium text-gray-900">{group.name}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded">
-                        {getIdeaCount(category.id)}
+                        {getIdeaCount(group.id)}
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            data-testid={`button-category-menu-${category.id}`}
+                            data-testid={`button-group-menu-${group.id}`}
                             className="h-6 w-6 p-0 bg-white hover:bg-gray-50 rounded"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -221,25 +200,21 @@ export default function FloatingSidebar({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            onClick={() => handleEditCategory(category)}
-                            data-testid={`button-edit-category-${category.id}`}
+                            onClick={() => handleEditGroup(group)}
+                            data-testid={`button-edit-group-${group.id}`}
                           >
                             <Edit2 className="mr-2 h-3 w-3" />
-                            Edit Category
+                            Edit Group
                           </DropdownMenuItem>
-                          {category.name !== "General" && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive"
-                                onClick={() => handleDeleteCategory(category)}
-                                data-testid={`button-delete-category-${category.id}`}
-                              >
-                                <Trash2 className="mr-2 h-3 w-3" />
-                                Delete Category
-                              </DropdownMenuItem>
-                            </>
-                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteGroup(group.id)}
+                            className="text-red-600"
+                            data-testid={`button-delete-group-${group.id}`}
+                          >
+                            <Trash2 className="mr-2 h-3 w-3" />
+                            Delete Group
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -250,13 +225,6 @@ export default function FloatingSidebar({
           )}
         </div>
       </div>
-
-      {/* Category Modal */}
-      <CategoryModal
-        isOpen={isCategoryModalOpen}
-        onClose={handleCloseCategoryModal}
-        category={editingCategory}
-      />
     </>
   );
 }
