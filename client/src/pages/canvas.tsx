@@ -22,6 +22,7 @@ export default function Canvas() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [isInitialPositioned, setIsInitialPositioned] = useState(false);
+  const [selectedIdeaIds, setSelectedIdeaIds] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -270,6 +271,64 @@ export default function Canvas() {
     setIsIdeaModalOpen(true);
   };
 
+  const handleIdeaSelect = (ideaId: string, isCtrlPressed: boolean) => {
+    if (isCtrlPressed) {
+      // Multi-select mode
+      const newSelected = new Set(selectedIdeaIds);
+      if (newSelected.has(ideaId)) {
+        newSelected.delete(ideaId);
+      } else {
+        newSelected.add(ideaId);
+      }
+      setSelectedIdeaIds(newSelected);
+    } else {
+      // Single select or clear selection
+      if (selectedIdeaIds.size > 0) {
+        setSelectedIdeaIds(new Set());
+      }
+    }
+  };
+
+  const handleBulkDelete = () => {
+    const ideaIds = Array.from(selectedIdeaIds);
+    Promise.all(ideaIds.map(id => apiRequest("DELETE", `/api/ideas/${id}`)))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+        setSelectedIdeaIds(new Set());
+        toast({
+          title: "Success",
+          description: `Deleted ${ideaIds.length} ideas successfully`,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Error",
+          description: "Failed to delete some ideas",
+          variant: "destructive",
+        });
+      });
+  };
+
+  const handleBulkGroupChange = (groupId: string) => {
+    const ideaIds = Array.from(selectedIdeaIds);
+    Promise.all(ideaIds.map(id => apiRequest("PUT", `/api/ideas/${id}`, { groupId })))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+        setSelectedIdeaIds(new Set());
+        toast({
+          title: "Success",
+          description: `Updated ${ideaIds.length} ideas successfully`,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Error",
+          description: "Failed to update some ideas",
+          variant: "destructive",
+        });
+      });
+  };
+
   const handleTodoListOpen = (groupId: string) => {
     setSelectedGroupId(groupId);
     setIsTodoModalOpen(true);
@@ -415,9 +474,13 @@ export default function Canvas() {
               groups={groups}
               zoom={zoom}
               panOffset={panOffset}
+              selectedIdeaIds={selectedIdeaIds}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}
+              onIdeaSelect={handleIdeaSelect}
+              onBulkDelete={handleBulkDelete}
+              onBulkGroupChange={handleBulkGroupChange}
               onPanChange={setPanOffset}
             />
           </div>
