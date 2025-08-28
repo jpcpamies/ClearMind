@@ -188,32 +188,43 @@
 }
 
 /* Professional Card Selection and Drag States */
-.card-selected {
-  border: 2px solid #3B82F6 !important;
-  box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.15) !important;
-}
-
-.card-dragging {
-  z-index: 1000 !important;
-  transform: rotate(1deg) scale(1.02) !important;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
-}
-
-.card-multi-selected {
-  border: 2px solid #3B82F6 !important;
-  box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.15) !important;
-}
-
-/* Canvas interactions */
 .idea-card {
+  position: relative !important;
+  z-index: 1;
   transition: all 0.2s ease !important;
-  position: relative;
+  box-sizing: border-box;
 }
 
 .idea-card:hover:not(.card-dragging) {
   transform: scale(1.01);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  outline: 1px solid rgba(59, 130, 246, 0.3);
+  outline-offset: 1px;
+}
+
+.card-selected {
+  position: relative !important;
+  z-index: 100 !important;
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+}
+
+.card-multi-selected {
+  position: relative !important;
+  z-index: 100 !important;
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 1px !important;
+  box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+}
+
+.card-dragging {
+  position: relative !important;
+  z-index: 1000 !important;
+  transform: rotate(1deg) scale(1.02) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25) !important;
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 1px !important;
 }
 
 .draggable {
