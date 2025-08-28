@@ -64,12 +64,12 @@ export default function Canvas() {
     
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // Account for sidebar width (approximately 320px for the full sidebar)
-    const sidebarWidth = 320;
-    const effectiveWidth = rect.width - sidebarWidth;
+    // Account for sidebar occupied space (320px width + 12px left margin = 332px)
+    const sidebarOccupiedSpace = 332;
+    const effectiveWidth = rect.width - sidebarOccupiedSpace;
     
     // Calculate the actual center of visible canvas area
-    const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
+    const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
     const viewportCenterY = rect.height / 2;
     
     // Convert screen coordinates to canvas coordinates
@@ -93,10 +93,10 @@ export default function Canvas() {
     if (!ideasLoading && !isInitialPositioned && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       
-      // Account for full sidebar width (approximately 320px)
-      const sidebarWidth = 320;
-      const effectiveWidth = rect.width - sidebarWidth;
-      const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
+      // Account for sidebar occupied space (320px width + 12px left margin = 332px)
+      const sidebarOccupiedSpace = 332;
+      const effectiveWidth = rect.width - sidebarOccupiedSpace;
+      const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
       const viewportCenterY = rect.height / 2;
       
       if (ideas.length > 0) {
@@ -283,19 +283,26 @@ export default function Canvas() {
     if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const sidebarWidth = 320;
-    const effectiveWidth = rect.width - sidebarWidth;
-    const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
+    // Sidebar is w-80 (320px) + left-3 (12px) = 332px total occupied space
+    const sidebarOccupiedSpace = 332;
+    const effectiveWidth = rect.width - sidebarOccupiedSpace;
+    const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
     const viewportCenterY = rect.height / 2;
     
+    // Always set zoom to 100% (1.0)
     setZoom(1);
     
     if (ideas.length > 0) {
-      // Center on existing cards
+      // Center on existing cards with correct transformation
       const bounds = calculateCardsBounds(ideas);
       if (bounds) {
+        // Transform formula: screenPos = canvasPos * zoom + panOffset
+        // We want the center of all cards to appear at viewportCenter
+        // So: viewportCenter = bounds.center * zoom + panOffset
+        // Therefore: panOffset = viewportCenter - bounds.center * zoom
         const offsetX = viewportCenterX - bounds.centerX;
         const offsetY = viewportCenterY - bounds.centerY;
+        
         setPanOffset({ x: offsetX, y: offsetY });
       }
     } else {
