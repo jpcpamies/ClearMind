@@ -274,6 +274,31 @@ export default function Canvas() {
     setCurrentView(view);
   };
 
+  const handleResetView = () => {
+    if (!canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const sidebarWidth = 320;
+    const effectiveWidth = rect.width - sidebarWidth;
+    const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
+    const viewportCenterY = rect.height / 2;
+    
+    setZoom(1);
+    
+    if (ideas.length > 0) {
+      // Center on existing cards
+      const bounds = calculateCardsBounds(ideas);
+      if (bounds) {
+        const offsetX = viewportCenterX - bounds.centerX;
+        const offsetY = viewportCenterY - bounds.centerY;
+        setPanOffset({ x: offsetX, y: offsetY });
+      }
+    } else {
+      // Center the origin (0,0) in the viewport
+      setPanOffset({ x: viewportCenterX, y: viewportCenterY });
+    }
+  };
+
   if (ideasLoading || groupsLoading) {
     return (
       <div className="w-screen h-screen flex items-center justify-center">
@@ -345,10 +370,7 @@ export default function Canvas() {
           <ZoomControls
             zoom={zoom}
             onZoomChange={setZoom}
-            onResetView={() => {
-              setZoom(1);
-              setPanOffset({ x: 0, y: 0 });
-            }}
+            onResetView={handleResetView}
           />
         </>
       ) : (
