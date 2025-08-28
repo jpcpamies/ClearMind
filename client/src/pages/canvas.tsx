@@ -315,7 +315,7 @@ export default function Canvas() {
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       {/* Top Navigation Toggle */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30">
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-floating">
         <div className="frosted-glass-bg rounded-lg p-1">
           <div className="flex space-x-1">
             <button
@@ -347,7 +347,7 @@ export default function Canvas() {
       {currentView === "canvas" ? (
         <>
           {/* Left Floating Sidebar */}
-          <div className="absolute top-3 left-3 z-20">
+          <div className="absolute top-3 left-3 z-floating">
             <FloatingSidebar
               onNewIdea={handleNewIdea}
               onTodoListOpen={handleTodoListOpen}

@@ -18,7 +18,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
 
   return (
     <div 
-      className="fixed bottom-5 right-5 z-[40] frosted-glass-bg rounded-lg p-3"
+      className="fixed bottom-5 right-5 z-floating frosted-glass-bg rounded-lg p-3"
     >
       <div className="flex items-center space-x-2">
         {/* Plus Button */}

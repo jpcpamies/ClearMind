@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus, Flag, List, MoreHorizontal, Check, Trash } from "lucide-react";
 import { useEscapeKey } from "@/hooks/useEscapeKey";
@@ -431,50 +430,41 @@ export default function TodoListModal({
       </DialogContent>
       </Dialog>
     
-    {/* Confirmation Dialog rendered in a portal outside of the main Dialog */}
-    {showDeleteConfirm && createPortal(
-      <>
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[2000] overscroll-contain" 
-          onClick={() => setShowDeleteConfirm(false)} 
-        />
-        {/* Confirmation Dialog */}
-        <div className="fixed left-[50%] top-[50%] z-[2001] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg max-h-[85vh] overflow-y-auto overscroll-contain mx-4 my-4 sm:mx-auto sm:my-8 min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <div className="flex flex-col space-y-2 text-center sm:text-left">
-            <h2 className="text-lg font-semibold">Delete TodoList</h2>
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete '{group?.name}'?
-              <br />
-              <span className="text-destructive font-medium">This action cannot be undone.</span>
-              {ideas.length > 0 && (
-                <span className="block mt-2">
-                  All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-            <Button
-              variant="outline"
-              data-testid="button-cancel-delete"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              data-testid="button-confirm-delete"
-              onClick={handleDeleteTodoList}
-              disabled={deleteGroupMutation.isPending}
-            >
-              {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </div>
-      </>,
-      document.body
-    )}
+    {/* Confirmation AlertDialog using proper layering */}
+    <AlertDialog 
+      open={showDeleteConfirm} 
+      onOpenChange={setShowDeleteConfirm}
+      onEscapeKeyDown={() => setShowDeleteConfirm(false)}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete TodoList</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete '{group?.name}'?
+            <br />
+            <span className="text-destructive font-medium">This action cannot be undone.</span>
+            {ideas.length > 0 && (
+              <span className="block mt-2">
+                All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel data-testid="button-cancel-delete">
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            data-testid="button-confirm-delete"
+            onClick={handleDeleteTodoList}
+            disabled={deleteGroupMutation.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
