@@ -30,7 +30,7 @@ const presetColors = [
   { name: "Indigo", value: "#6366F1" },
   { name: "Cyan", value: "#06B6D4" },
   { name: "Emerald", value: "#059669" },
-  { name: "Yellow", value: "#F59E0B" },
+  { name: "Yellow", value: "#FCD34D" },
   { name: "Lime", value: "#84CC16" },
   { name: "Rose", value: "#F43F5E" },
 ];
@@ -182,7 +182,7 @@ export default function GroupModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md z-[60]">
+      <DialogContent className="max-w-md z-[100]">
         <DialogHeader className="pb-4 border-b border-border">
           <DialogTitle className="text-xl">
             {editingGroup ? "Edit Group" : "Create New Group"}
