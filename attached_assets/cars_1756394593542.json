@@ -1,0 +1,130 @@
+{
+  "name": "Car Ideas Canvas",
+  "type": "document",
+  "format": "json",
+  "content": [
+    {
+      "name": "Sports Cars",
+      "color": "red",
+      "ideas": [
+        {
+          "title": "Design a new Ferrari concept",
+          "description": "A futuristic Ferrari with aerodynamic lines and hybrid engine.",
+          "priority": "medium"
+        },
+        {
+          "title": "Lamborghini adventure tour",
+          "description": "Organize a road trip across Italy with Lamborghinis.",
+          "priority": "medium"
+        },
+        {
+          "title": "Create a Porsche museum app",
+          "description": "An interactive guide for Porsche lovers visiting museums.",
+          "priority": "medium"
+        },
+        {
+          "title": "Develop a McLaren racing game",
+          "description": "A mobile game focused on McLaren F1 racing cars.",
+          "priority": "medium"
+        },
+        {
+          "title": "Audi R8 electric version",
+          "description": "Brainstorm features for a fully electric Audi R8 model.",
+          "priority": "medium"
+        },
+        {
+          "title": "Sports car photography club",
+          "description": "A community for photographers who love exotic cars.",
+          "priority": "medium"
+        },
+        {
+          "title": "Virtual test drive simulator",
+          "description": "An immersive VR experience for luxury sports cars.",
+          "priority": "medium"
+        }
+      ]
+    },
+    {
+      "name": "Classic Cars",
+      "color": "blue",
+      "ideas": [
+        {
+          "title": "Restoration of a 1967 Mustang",
+          "description": "Bring back to life a classic Ford Mustang.",
+          "priority": "medium"
+        },
+        {
+          "title": "Vintage car exhibition",
+          "description": "Plan a public event with rare old cars.",
+          "priority": "medium"
+        },
+        {
+          "title": "Documentary about Beetle history",
+          "description": "Film the story of the Volkswagen Beetle worldwide.",
+          "priority": "medium"
+        },
+        {
+          "title": "Antique car club",
+          "description": "Create a local club for owners of vintage vehicles.",
+          "priority": "medium"
+        },
+        {
+          "title": "Classic car merchandise",
+          "description": "Design T-shirts and posters inspired by old cars.",
+          "priority": "medium"
+        },
+        {
+          "title": "Chevrolet Impala replica project",
+          "description": "Blueprint for building a replica of the 1960 Impala.",
+          "priority": "medium"
+        },
+        {
+          "title": "Classic car restoration YouTube channel",
+          "description": "Upload tutorials and timelapses of restorations.",
+          "priority": "medium"
+        }
+      ]
+    },
+    {
+      "name": "Future Cars",
+      "color": "green",
+      "ideas": [
+        {
+          "title": "Flying car prototype",
+          "description": "A vehicle that can both drive and fly safely.",
+          "priority": "medium"
+        },
+        {
+          "title": "Self-driving taxi fleet",
+          "description": "Autonomous cars operating as city taxis.",
+          "priority": "medium"
+        },
+        {
+          "title": "Solar-powered vehicle",
+          "description": "A car entirely powered by solar panels.",
+          "priority": "medium"
+        },
+        {
+          "title": "AI driving assistant",
+          "description": "Artificial intelligence for safer and smarter driving.",
+          "priority": "medium"
+        },
+        {
+          "title": "Holographic dashboard",
+          "description": "Replace screens with holographic projections.",
+          "priority": "medium"
+        },
+        {
+          "title": "Smart road system",
+          "description": "Roads that communicate with cars for traffic safety.",
+          "priority": "medium"
+        },
+        {
+          "title": "Underwater car concept",
+          "description": "A futuristic car that can drive underwater.",
+          "priority": "medium"
+        }
+      ]
+    }
+  ]
+}

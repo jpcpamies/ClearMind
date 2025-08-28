@@ -221,11 +221,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import data endpoint
   app.post("/api/import-data", auth, async (req: any, res) => {
     try {
-      const importData = req.body;
+      let importData = req.body;
+      
+      // Handle nested structure (if data has a content property, use that)
+      if (importData && typeof importData === 'object' && !Array.isArray(importData) && importData.content) {
+        importData = importData.content;
+      }
       
       // Validate that it's an array of groups
       if (!Array.isArray(importData)) {
-        return res.status(400).json({ message: "Data must be an array of groups" });
+        return res.status(400).json({ message: "Data must be an array of groups or have a content property with groups array" });
       }
 
       const results = {
