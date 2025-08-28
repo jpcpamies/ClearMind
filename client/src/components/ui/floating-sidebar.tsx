@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Edit2, Trash2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import logoUrl from "@assets/logo-clearming_1756234542415.png";
+import { Plus, MoreHorizontal, Edit2, Trash2 } from "lucide-react";
+import logoUrl from "@assets/logo-clearming_1756380749140.png";
 import { Button } from "./button";
 import {
   DropdownMenu,
@@ -26,7 +26,6 @@ export default function FloatingSidebar({
 }: FloatingSidebarProps) {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -89,141 +88,120 @@ export default function FloatingSidebar({
     setEditingGroup(null);
   };
 
-  if (isCollapsed) {
-    return (
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsCollapsed(false)}
-          className="bg-white/90 backdrop-blur-sm shadow-lg border-gray-200"
-          data-testid="button-expand-sidebar"
-        >
-          <PanelLeftOpen className="w-4 h-4" />
-        </Button>
-      </div>
-    );
-  }
+  const getColorClass = (color: string) => {
+    const colorMap = {
+      purple: "#8B5CF6",
+      blue: "#3B82F6", 
+      green: "#10B981",
+      orange: "#F59E0B",
+    };
+    return colorMap[color as keyof typeof colorMap] || "#8B5CF6";
+  };
 
   return (
     <>
-      <div className="fixed top-4 left-4 z-50 w-80 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-4">
+      <div className="fixed top-4 left-4 z-50 w-80 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <img 
-              src={logoUrl} 
-              alt="Clear Mind Logo" 
-              className="w-8 h-8 rounded-lg"
-              data-testid="logo"
-            />
-            <span className="text-lg font-semibold text-gray-800">Clear Mind</span>
+        <div className="mb-8">
+          <img 
+            src={logoUrl} 
+            alt="ClearMind Logo" 
+            className="h-10 mb-4"
+            data-testid="logo"
+          />
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Hello Demo User</h2>
+          <p className="text-sm text-gray-600">What ideas do you have today?</p>
+        </div>
+
+        {/* New Idea Button */}
+        <Button
+          onClick={onNewIdea}
+          className="w-full mb-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3 rounded-xl"
+          data-testid="button-new-idea"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Idea
+        </Button>
+
+        {/* Idea Groups Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-700 uppercase tracking-wide">IDEA GROUPS</h3>
+            <Button
+              onClick={handleNewGroup}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900"
+              data-testid="button-new-group"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(true)}
-            className="h-6 w-6 p-0"
-            data-testid="button-collapse-sidebar"
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </Button>
-        </div>
 
-        {/* Actions */}
-        <div className="flex space-x-2 mb-6">
-          <Button
-            onClick={onNewIdea}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            data-testid="button-new-idea"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Idea
-          </Button>
-          <Button
-            onClick={handleNewGroup}
-            variant="outline"
-            className="flex-1"
-            data-testid="button-new-group"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Group
-          </Button>
-        </div>
-
-        {/* Section Title */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-700">Groups</h3>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            {groups.length}
-          </span>
-        </div>
-
-        {/* Groups List */}
-        <div className="max-h-96 overflow-y-auto">
-          {groups.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No groups created yet.</p>
-              <p className="text-xs mt-1">Click + to create your first group.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {groups.map((group) => (
+          {/* Groups List */}
+          <div className="space-y-2">
+            {groups.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No groups created yet.</p>
+                <p className="text-xs mt-1">Click + to create your first group.</p>
+              </div>
+            ) : (
+              groups.map((group) => (
                 <div
                   key={group.id}
                   data-testid={`group-item-${group.id}`}
-                  className="group-item p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
+                  onClick={() => onTodoListOpen?.(group.id)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: group.color }}
-                        data-testid={`group-color-dot-${group.id}`}
-                      />
-                      <span className="font-medium text-gray-900">{group.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded">
-                        {getIdeaCount(group.id)}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            data-testid={`button-group-menu-${group.id}`}
-                            className="h-6 w-6 p-0 bg-white hover:bg-gray-50 rounded"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="w-4 h-4 text-gray-600" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => handleEditGroup(group)}
-                            data-testid={`button-edit-group-${group.id}`}
-                          >
-                            <Edit2 className="mr-2 h-3 w-3" />
-                            Edit Group
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteGroup(group.id)}
-                            className="text-red-600"
-                            data-testid={`button-delete-group-${group.id}`}
-                          >
-                            <Trash2 className="mr-2 h-3 w-3" />
-                            Delete Group
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getColorClass(group.color) }}
+                      data-testid={`group-color-dot-${group.id}`}
+                    />
+                    <span className="font-medium text-gray-900 text-sm">{group.name}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {getIdeaCount(group.id)}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`button-group-menu-${group.id}`}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="w-3 h-3 text-gray-400" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem 
+                          onClick={() => handleEditGroup(group)}
+                          data-testid={`button-edit-group-${group.id}`}
+                          className="text-sm"
+                        >
+                          <Edit2 className="mr-2 h-3 w-3" />
+                          Edit Group
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteGroup(group.id)}
+                          className="text-red-600 text-sm"
+                          data-testid={`button-delete-group-${group.id}`}
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Delete Group
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
       
