@@ -1,0 +1,56 @@
+FIRST: Audit existing functionality before making any changes. Check what already exists:
+
+AUDIT CHECKLIST - Report status of each item:
+- Does category context menu (right-click) already exist? What options does it have?
+- Are there any "Convert" or "Sync" buttons already in TodoList modals?
+- What database tables currently exist for ideas, categories, todolists, tasks?
+- Are there any existing relationships between ideas and tasks in the database?
+- Do TodoList cards show any sync indicators or task counts currently?
+
+AFTER AUDIT: Only implement missing functionality from the requirements below.
+
+CANVAS TO TODOLIST CONVERSION (only if not exists):
+- Add "Convert to Tasks" button in category context menu (right-click on category in sidebar)
+- When clicked, show modal: "Convert [Category Name] ideas to TodoList"
+- Modal shows: list of ideas in category, TodoList name input, section organization options
+- Create TodoList with all ideas converted to tasks, maintaining title/description
+- Original ideas remain on canvas (no deletion), but get "converted" flag in database
+
+TODOLIST TO CANVAS SYNC (only if not exists):
+- Add "Sync to Canvas" button in TodoList modal header
+- When tasks are added/edited in TodoList, offer to create corresponding ideas on canvas
+- New canvas ideas get positioned in category group area
+- Maintain bidirectional relationship: idea ↔ task linking in database
+
+TASK MANAGEMENT ENHANCEMENTS (only add missing features):
+- Task priorities: Critical (red), High (orange), Medium (yellow), Low (green)
+- Task status: Pending, In Progress, Completed
+- Due dates for tasks (optional)
+- Task descriptions (from original idea description)
+- Section organization within TodoLists
+
+VISUAL INDICATORS (only if not exists):
+- Canvas ideas that have corresponding tasks show small TodoList icon
+- TodoList tasks that have corresponding canvas ideas show small canvas icon
+- Color consistency: category colors match across canvas and TodoLists
+- Status indicators: completed tasks show strikethrough
+
+DATABASE RELATIONSHIPS (extend existing schema only):
+- Check if idea_task_relationships table exists, if not create it: idea_id, task_id, sync_status
+- Track conversion status and last sync timestamps
+- Maintain referential integrity between ideas and tasks
+- Handle cascade updates when ideas or tasks are modified
+
+SYNC CONFLICT HANDLING (only if not exists):
+- Detect when idea and corresponding task have different titles/descriptions
+- Show sync status indicators: "Synced", "Needs Update", "Conflicted"
+- Simple conflict resolution: "Use Canvas Version" or "Use TodoList Version"
+- Log sync history for debugging
+
+IMPLEMENTATION APPROACH:
+1. First, show me audit results of what currently exists
+2. Then implement only the missing pieces
+3. Preserve all existing functionality exactly as it works now
+4. Test each new feature individually before adding the next
+
+CRITICAL: Do not modify, remove, or break any existing canvas drag & drop, category systems, TodoList functionality, or database relationships that already work.
