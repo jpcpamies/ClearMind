@@ -34,7 +34,7 @@ export interface IStorage {
   // Groups operations (legacy - maintain for compatibility)
   getAllGroups(userId: string): Promise<Group[]>;
   getGroup(id: string, userId: string): Promise<Group | undefined>;
-  createGroup(group: InsertGroup): Promise<Group>;
+  createGroup(groupData: InsertGroup & { userId: string }): Promise<Group>;
   updateGroup(id: string, updates: Partial<InsertGroup>, userId: string): Promise<Group | null>;
   deleteGroup(id: string, userId: string): Promise<boolean>;
 
@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
   async ensureDefaultCategories(userId: string): Promise<Category[]> {
     const existingCategories = await this.getAllCategories(userId);
     
-    const defaultCategories: Array<InsertCategory & { userId: string }> = [
+    const defaultCategories = [
       { name: "General", color: "#6366f1", userId },
       { name: "Work", color: "#10b981", userId },
       { name: "Personal", color: "#f59e0b", userId },
@@ -173,10 +173,10 @@ export class DatabaseStorage implements IStorage {
     return group;
   }
 
-  async createGroup(group: InsertGroup): Promise<Group> {
+  async createGroup(groupData: InsertGroup & { userId: string }): Promise<Group> {
     const [newGroup] = await db
       .insert(groups)
-      .values(group)
+      .values(groupData)
       .returning();
     return newGroup;
   }
