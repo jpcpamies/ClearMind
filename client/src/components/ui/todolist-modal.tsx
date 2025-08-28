@@ -214,20 +214,9 @@ export default function TodoListModal({
       <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
-              <DialogTitle className="text-xl">{group.name}</DialogTitle>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              data-testid="button-close-todo-modal"
-              onClick={onClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center space-x-3">
+            <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
+            <DialogTitle className="text-xl">{group.name}</DialogTitle>
           </div>
         </DialogHeader>
 

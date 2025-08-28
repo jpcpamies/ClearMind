@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -154,20 +153,9 @@ export default function GroupModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader className="pb-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl">
-              {editingGroup ? "Edit Group" : "Create New Group"}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              disabled={isPending}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl">
+            {editingGroup ? "Edit Group" : "Create New Group"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
