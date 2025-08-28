@@ -315,11 +315,15 @@ export default function Canvas() {
     console.log('📱 Current zoom:', zoom);
     console.log('🎮 Current pan offset:', panOffset);
     
-    // Always set zoom to 100% (1.0)
+    // Always set zoom to 100% (1.0) FIRST, then calculate positioning
     console.log('⚡ Setting zoom to 1.0');
     setZoom(1);
     
-    if (ideas.length > 0) {
+    // Use setTimeout to ensure zoom update is applied before calculating positions
+    setTimeout(() => {
+      console.log('⏰ Timeout callback - recalculating positions with new zoom');
+      
+      if (ideas.length > 0) {
       console.log('🃏 Found', ideas.length, 'cards');
       console.log('🃏 Card positions:', ideas.map(idea => ({ 
         id: idea.id, 
@@ -344,12 +348,13 @@ export default function Canvas() {
         console.log('🎯 Setting pan offset...');
         setPanOffset({ x: offsetX, y: offsetY });
         console.log('✅ Pan offset set!');
+        }
+      } else {
+        console.log('📭 No cards found, centering origin');
+        // Center the origin (0,0) in the viewport
+        setPanOffset({ x: viewportCenterX, y: viewportCenterY });
       }
-    } else {
-      console.log('📭 No cards found, centering origin');
-      // Center the origin (0,0) in the viewport
-      setPanOffset({ x: viewportCenterX, y: viewportCenterY });
-    }
+    }, 100); // Wait 100ms for zoom state to update
   };
 
   if (ideasLoading || groupsLoading) {

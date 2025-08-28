@@ -22,6 +22,10 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
     console.log('🎯 Reset view button clicked in ZoomControls');
     console.log('🎯 Event details:', e.currentTarget, e.target);
     console.log('🎯 onResetView function:', onResetView);
+    
+    // Add visual feedback
+    alert('Fit to canvas button clicked!');
+    
     e.preventDefault();
     e.stopPropagation();
     onResetView();
@@ -78,6 +82,8 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
         <button
           onClick={() => {
             console.log('🔴 DEBUG: Raw button clicked!');
+            console.log('🔴 Current zoom:', zoom);
+            alert(`DEBUG clicked! Zoom: ${Math.round(zoom * 100)}%`);
             onResetView();
           }}
           style={{ 
@@ -89,7 +95,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
             marginLeft: '8px'
           }}
         >
-          DEBUG
+          {Math.round(zoom * 100)}%
         </button>
       </div>
     </div>
