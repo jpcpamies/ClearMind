@@ -41,7 +41,6 @@ export default function Canvas() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-      setIsIdeaModalOpen(false);
       toast({
         title: "Success",
         description: "Idea created successfully",
@@ -64,6 +63,10 @@ export default function Canvas() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      toast({
+        title: "Success",
+        description: "Idea updated successfully",
+      });
     },
     onError: (error) => {
       toast({
@@ -98,6 +101,18 @@ export default function Canvas() {
 
   const handleIdeaUpdate = (ideaId: string, updates: Partial<Idea>) => {
     updateIdeaMutation.mutate({ id: ideaId, ...updates });
+  };
+
+  // Handle modal submission - CREATE or UPDATE based on editing state
+  const handleIdeaModalSubmit = (data: any) => {
+    if (editingIdeaId) {
+      // EDITING: Update existing idea
+      updateIdeaMutation.mutate({ id: editingIdeaId, ...data });
+    } else {
+      // CREATING: Create new idea
+      createIdeaMutation.mutate(data);
+    }
+    setIsIdeaModalOpen(false);
   };
 
   const handleNewIdea = () => {
@@ -211,10 +226,10 @@ export default function Canvas() {
       <IdeaModal
         isOpen={isIdeaModalOpen}
         onClose={() => setIsIdeaModalOpen(false)}
-        onSubmit={createIdeaMutation.mutate}
+        onSubmit={handleIdeaModalSubmit}
         groups={groups}
         editingIdea={editingIdeaId ? ideas.find(i => i.id === editingIdeaId) : null}
-        isLoading={createIdeaMutation.isPending}
+        isLoading={editingIdeaId ? updateIdeaMutation.isPending : createIdeaMutation.isPending}
       />
 
       <TodoListModal

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth-demo';
+import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, UserCheck } from 'lucide-react';
 import logoUrl from '@assets/logo-completo-vertical-clearmind_1756235946084.png';
 
