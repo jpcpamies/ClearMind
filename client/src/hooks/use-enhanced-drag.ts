@@ -110,18 +110,19 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
       // Update primary dragged card
       const primaryCardElement = currentState.dragElements[currentState.dragCardId!];
       if (primaryCardElement) {
-        const newX = Math.round(mouseX - currentState.offset.x);
-        const newY = Math.round(mouseY - currentState.offset.y);
+        // Calculate new position using mouse position minus the original offset
+        const newScreenX = Math.round(mouseX - currentState.offset.x);
+        const newScreenY = Math.round(mouseY - currentState.offset.y);
         
-        const transform = `translate(${newX}px, ${newY}px) rotate(${effects.rotation}deg) scale(${effects.scale})`;
+        const transform = `translate(${newScreenX}px, ${newScreenY}px) rotate(${effects.rotation}deg) scale(${effects.scale})`;
         primaryCardElement.style.transform = transform;
         
-        // Update current position for saving later
+        // Update current position for saving later (in screen coordinates)
         setDragState(prev => ({
           ...prev,
           currentPositions: {
             ...prev.currentPositions,
-            [currentState.dragCardId!]: { x: newX, y: newY }
+            [currentState.dragCardId!]: { x: newScreenX, y: newScreenY }
           },
           velocity,
           lastMousePos: { x: mouseX, y: mouseY }
@@ -136,13 +137,25 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
           const primaryInitialPos = currentState.initialPositions[currentState.dragCardId!];
           
           if (initialPos && primaryInitialPos) {
+            // Calculate relative offset between this card and the primary dragged card
             const relativeX = initialPos.x - primaryInitialPos.x;
             const relativeY = initialPos.y - primaryInitialPos.y;
-            const newX = Math.round((mouseX - currentState.offset.x) + relativeX);
-            const newY = Math.round((mouseY - currentState.offset.y) + relativeY);
             
-            const transform = `translate(${newX}px, ${newY}px) rotate(${effects.rotation * 0.7}deg) scale(${effects.scale * 0.95})`;
+            // Apply the same mouse movement to this card, maintaining relative position
+            const newScreenX = Math.round((mouseX - currentState.offset.x) + relativeX);
+            const newScreenY = Math.round((mouseY - currentState.offset.y) + relativeY);
+            
+            const transform = `translate(${newScreenX}px, ${newScreenY}px) rotate(${effects.rotation * 0.7}deg) scale(${effects.scale * 0.95})`;
             element.style.transform = transform;
+            
+            // Update position for this card too
+            setDragState(prev => ({
+              ...prev,
+              currentPositions: {
+                ...prev.currentPositions,
+                [cardId]: { x: newScreenX, y: newScreenY }
+              }
+            }));
           }
         }
       });
@@ -176,9 +189,10 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
     };
 
     // Calculate precise offset from mouse to card's current screen position
+    // Account for the element's bounding box position instead of calculated position
     const offset = {
-      x: e.clientX - currentScreenPos.x,
-      y: e.clientY - currentScreenPos.y,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     };
 
     let selectedCards = new Set<string>();
@@ -193,22 +207,21 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
       selectedCards.add(item.id);
     }
 
-    // Store initial positions and elements for all selected cards (in screen coordinates)
+    // Store initial positions and elements for all selected cards (using actual element positions)
     selectedCards.forEach(cardId => {
-      const cardIdea = ideas.find(idea => idea.id === cardId);
-      if (cardIdea) {
-        initialPositions[cardId] = {
-          x: (cardIdea.canvasX || 0) * zoom + panOffset.x,
-          y: (cardIdea.canvasY || 0) * zoom + panOffset.y
-        };
-      }
-      
       // Find card element
       const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
       if (cardElement) {
         dragElements[cardId] = cardElement;
         // Apply dragging class with immediate visual feedback
         cardElement.classList.add('dragging-card');
+        
+        // Get the actual element's current position on screen
+        const cardRect = cardElement.getBoundingClientRect();
+        initialPositions[cardId] = {
+          x: cardRect.left,
+          y: cardRect.top
+        };
       }
     });
 
@@ -262,14 +275,10 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
     document.body.style.cursor = '';
 
     // Remove dragging classes and reset transforms
-    Object.values(currentState.dragElements).forEach(element => {
+    Object.entries(currentState.dragElements).forEach(([cardId, element]) => {
       element.classList.remove('dragging-card');
-      // Reset transform to final position without effects
-      const cardId = element.getAttribute('data-testid')?.replace('idea-card-', '');
-      if (cardId && currentState.currentPositions[cardId]) {
-        const pos = currentState.currentPositions[cardId];
-        element.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
-      }
+      // Reset transform to remove drag effects, let CSS positioning handle the rest
+      element.style.transform = '';
     });
 
     // Save positions to database with debouncing
