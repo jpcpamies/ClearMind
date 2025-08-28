@@ -77,6 +77,28 @@ export default function Canvas() {
     },
   });
 
+  // Delete idea mutation
+  const deleteIdeaMutation = useMutation({
+    mutationFn: async (ideaId: string) => {
+      const response = await apiRequest("DELETE", `/api/ideas/${ideaId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      toast({
+        title: "Success",
+        description: "Idea deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete idea",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (groupData: any) => {
@@ -100,7 +122,19 @@ export default function Canvas() {
   });
 
   const handleIdeaUpdate = (ideaId: string, updates: Partial<Idea>) => {
-    updateIdeaMutation.mutate({ id: ideaId, ...updates });
+    // Find the current idea to preserve its canvas position
+    const currentIdea = ideas.find(idea => idea.id === ideaId);
+    const updatesWithPosition = {
+      ...updates,
+      // Preserve canvas coordinates if not explicitly updating them
+      canvasX: updates.canvasX !== undefined ? updates.canvasX : currentIdea?.canvasX,
+      canvasY: updates.canvasY !== undefined ? updates.canvasY : currentIdea?.canvasY,
+    };
+    updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
+  };
+
+  const handleIdeaDelete = (ideaId: string) => {
+    deleteIdeaMutation.mutate(ideaId);
   };
 
   // Handle modal submission - CREATE or UPDATE based on editing state
@@ -196,6 +230,7 @@ export default function Canvas() {
               panOffset={panOffset}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
+              onIdeaDelete={handleIdeaDelete}
               onPanChange={setPanOffset}
             />
           </div>

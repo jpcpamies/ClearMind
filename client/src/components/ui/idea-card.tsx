@@ -20,6 +20,7 @@ interface IdeaCardProps {
   onTouchStart: (e: React.TouchEvent) => void;
   onEdit: () => void;
   onUpdate: (updates: Partial<Idea>) => void;
+  onDelete: () => void;
 }
 
 const colorStyles = {
@@ -48,6 +49,7 @@ export default function IdeaCard({
   onTouchStart,
   onEdit,
   onUpdate,
+  onDelete,
 }: IdeaCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -113,7 +115,7 @@ export default function IdeaCard({
             </DropdownMenuItem>
             <DropdownMenuItem
               data-testid={`button-delete-idea-${idea.id}`}
-              onClick={() => onUpdate({ completed: true })}
+              onClick={onDelete}
               className="text-destructive"
             >
               <Trash className="mr-2 h-3 w-3" />

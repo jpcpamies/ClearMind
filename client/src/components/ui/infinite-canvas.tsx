@@ -10,11 +10,12 @@ interface InfiniteCanvasProps {
   panOffset: { x: number; y: number };
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
   onIdeaEdit: (ideaId: string) => void;
+  onIdeaDelete: (ideaId: string) => void;
   onPanChange?: (offset: { x: number; y: number }) => void;
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, onIdeaUpdate, onIdeaEdit, onPanChange }, ref) => {
+  ({ ideas, groups, zoom, panOffset, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onPanChange }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -137,6 +138,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 isSelected={selectedCards.has(idea.id)}
                 onEdit={() => onIdeaEdit(idea.id)}
                 onUpdate={(updates) => onIdeaUpdate(idea.id, updates)}
+                onDelete={() => onIdeaDelete(idea.id)}
               />
             </div>
           );
