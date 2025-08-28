@@ -102,7 +102,12 @@ export default function FloatingSidebar({
 
   return (
     <>
-      <div className="fixed top-3 left-3 bottom-3 z-floating w-80 bg-white/30 backdrop-blur-sm rounded-2xl border border-white/40 p-3 flex flex-col">
+      <div 
+        className="fixed top-3 left-3 bottom-3 z-floating w-80 bg-white/30 rounded-2xl border border-white/40 p-3 flex flex-col"
+        style={{
+          backdropFilter: "blur(20px) saturate(180%) contrast(110%) brightness(100%)"
+        }}
+      >
         {/* Header with 140px spacing from top */}
         <div className="pt-[140px] mb-8">
           <img 
