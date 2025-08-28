@@ -1,12 +1,22 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Plus, Flag, List, MoreHorizontal, Check } from "lucide-react";
+import { X, Plus, Flag, List, MoreHorizontal, Check, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "./dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./alert-dialog";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Checkbox } from "./checkbox";
@@ -53,6 +63,7 @@ export default function TodoListModal({
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [newSectionName, setNewSectionName] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -110,6 +121,37 @@ export default function TodoListModal({
     },
   });
 
+  // Delete group mutation
+  const deleteGroupMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      const response = await apiRequest("DELETE", `/api/groups/${groupId}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete TodoList");
+      }
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidate groups and ideas queries to refresh sidebar
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      
+      // Close modal
+      onClose();
+      
+      toast({
+        title: "Success",
+        description: "TodoList deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete TodoList. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateTask = () => {
     if (!newTaskText.trim() || !groupId) return;
 
@@ -134,6 +176,12 @@ export default function TodoListModal({
 
   const handleTaskToggle = (ideaId: string, completed: boolean) => {
     onIdeaUpdate(ideaId, { completed });
+  };
+
+  const handleDeleteTodoList = () => {
+    if (!groupId) return;
+    setShowDeleteConfirm(false);
+    deleteGroupMutation.mutate(groupId);
   };
 
   const getColorClass = (color: string) => {
@@ -238,8 +286,8 @@ export default function TodoListModal({
                     <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
                       {idea.title}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
-                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[(idea.priority || 'medium') as keyof typeof priorityColors]}`}>
+                      {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
                     </span>
                   </div>
                 ))}
@@ -283,8 +331,8 @@ export default function TodoListModal({
                     <span className={`flex-1 text-foreground ${idea.completed ? 'line-through opacity-60' : ''}`}>
                       {idea.title}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[idea.priority as keyof typeof priorityColors]}`}>
-                      {idea.priority?.charAt(0).toUpperCase() + idea.priority?.slice(1)}
+                    <span className={`text-xs px-2 py-1 rounded ${priorityColors[(idea.priority || 'medium') as keyof typeof priorityColors]}`}>
+                      {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
                     </span>
                   </div>
                 ))}
@@ -367,8 +415,15 @@ export default function TodoListModal({
             <Button variant="secondary" size="sm">
               Export TodoList
             </Button>
-            <Button variant="destructive" size="sm">
-              Delete TodoList
+            <Button 
+              variant="destructive" 
+              size="sm"
+              data-testid="button-delete-todolist"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleteGroupMutation.isPending}
+            >
+              <Trash className="w-3 h-3 mr-1" />
+              {deleteGroupMutation.isPending ? "Deleting..." : "Delete TodoList"}
             </Button>
           </div>
           <div className="text-xs text-muted-foreground flex items-center space-x-1">
@@ -377,6 +432,35 @@ export default function TodoListModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete TodoList</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete '{group?.name}'? 
+              <br />
+              <span className="text-destructive font-medium">This action cannot be undone.</span>
+              {ideas.length > 0 && (
+                <span className="block mt-2 text-muted-foreground">
+                  All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="button-confirm-delete"
+              onClick={handleDeleteTodoList}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
