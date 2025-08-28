@@ -8,6 +8,7 @@ interface DragState {
   dragOffset: { x: number; y: number };
   selectedCards: Set<string>;
   initialCanvasPositions: Record<string, { x: number; y: number }>;
+  persistentSelection: Set<string>;
 }
 
 interface DragItem {
@@ -35,6 +36,7 @@ const initialDragState: DragState = {
   dragOffset: { x: 0, y: 0 },
   selectedCards: new Set(),
   initialCanvasPositions: {},
+  persistentSelection: new Set(),
 };
 
 export function useEnhancedDrag({ 
@@ -88,6 +90,7 @@ export function useEnhancedDrag({
     e.stopPropagation();
 
     const isMultiSelect = e.ctrlKey || e.metaKey;
+    const currentState = dragStateRef.current;
     
     // Find current idea and its canvas position
     const currentIdea = ideas.find(idea => idea.id === item.id);
@@ -110,14 +113,31 @@ export function useEnhancedDrag({
     };
 
     let selectedCards = new Set<string>();
+    let persistentSelection = new Set<string>();
     let initialCanvasPositions: Record<string, Position> = {};
 
-    // Handle multi-selection
+    // Handle selection logic
     if (isMultiSelect) {
-      selectedCards = new Set(dragStateRef.current.selectedCards);
-      selectedCards.add(item.id);
+      // Multi-select: add to existing selection
+      persistentSelection = new Set(currentState.persistentSelection);
+      if (persistentSelection.has(item.id)) {
+        persistentSelection.delete(item.id);
+      } else {
+        persistentSelection.add(item.id);
+      }
+      selectedCards = new Set(persistentSelection);
+      selectedCards.add(item.id); // Always include the card being dragged
     } else {
-      selectedCards.add(item.id);
+      // Single select: replace selection unless clicking on already selected card
+      if (currentState.persistentSelection.has(item.id) && currentState.persistentSelection.size > 1) {
+        // Clicking on a card that's part of multi-selection - drag all selected
+        selectedCards = new Set(currentState.persistentSelection);
+        persistentSelection = new Set(currentState.persistentSelection);
+      } else {
+        // New single selection
+        selectedCards.add(item.id);
+        persistentSelection = new Set([item.id]);
+      }
     }
 
     // Store initial canvas positions for all selected cards
@@ -131,6 +151,22 @@ export function useEnhancedDrag({
       }
     });
 
+    // Apply selection visual state immediately
+    document.querySelectorAll('.idea-card').forEach(card => {
+      card.classList.remove('card-selected', 'card-multi-selected');
+    });
+
+    persistentSelection.forEach(cardId => {
+      const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`);
+      if (cardElement) {
+        if (persistentSelection.size === 1) {
+          cardElement.classList.add('card-selected');
+        } else {
+          cardElement.classList.add('card-multi-selected');
+        }
+      }
+    });
+
     setDragState({
       isDragging: false,
       dragCardId: item.id,
@@ -138,7 +174,8 @@ export function useEnhancedDrag({
       startCanvasPos: canvasPos,
       dragOffset,
       selectedCards,
-      initialCanvasPositions
+      initialCanvasPositions,
+      persistentSelection
     });
 
     document.body.style.cursor = 'grabbing';
@@ -154,6 +191,14 @@ export function useEnhancedDrag({
     
     if (!currentState.isDragging && (deltaX > 5 || deltaY > 5)) {
       setDragState(prev => ({ ...prev, isDragging: true }));
+      
+      // Apply dragging visual state
+      currentState.selectedCards.forEach(cardId => {
+        const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`);
+        if (cardElement) {
+          cardElement.classList.add('card-dragging');
+        }
+      });
     }
 
     if (currentState.isDragging) {
@@ -195,7 +240,7 @@ export function useEnhancedDrag({
           wrapper.style.top = `${cardFinalScreenPos.y}px`;
         }
 
-        cardElement.classList.add('dragging-card');
+        // Visual feedback is already applied via card-dragging class
       });
     }
   }, [screenToCanvas, canvasToScreen]);
@@ -210,7 +255,7 @@ export function useEnhancedDrag({
     currentState.selectedCards.forEach(cardId => {
       const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
       if (cardElement) {
-        cardElement.classList.remove('dragging-card');
+        cardElement.classList.remove('card-dragging');
       }
     });
 
@@ -252,8 +297,28 @@ export function useEnhancedDrag({
       });
     }
 
-    setDragState(initialDragState);
+    // Reset drag state but maintain persistent selection
+    setDragState(prev => ({
+      ...initialDragState,
+      persistentSelection: prev.persistentSelection
+    }));
   }, [screenToCanvas, debouncedSave]);
+
+  // Handle canvas click to clear selection
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    // Only clear selection if clicking on canvas background (not on cards)
+    if (e.target === e.currentTarget) {
+      // Clear all selection visual states
+      document.querySelectorAll('.idea-card').forEach(card => {
+        card.classList.remove('card-selected', 'card-multi-selected');
+      });
+      
+      setDragState(prev => ({
+        ...prev,
+        persistentSelection: new Set()
+      }));
+    }
+  }, []);
 
   // Touch event handlers
   const handleTouchStart = useCallback((e: React.TouchEvent, item: DragItem) => {
@@ -325,8 +390,10 @@ export function useEnhancedDrag({
     draggedItem: dragState.dragCardId ? { id: dragState.dragCardId, type: "idea" } : null,
     isDragging: dragState.isDragging,
     selectedCards: dragState.selectedCards,
+    persistentSelection: dragState.persistentSelection,
     handleMouseDown,
     handleTouchStart,
+    handleCanvasClick,
     handleMouseMove: () => {},
     handleMouseUp: () => {},
   };

@@ -1,0 +1,69 @@
+I need to implement professional visual feedback for card selection and dragging. Looking at my reference images, I need these specific visual states:
+
+**1. SELECTION STATE (Blue Border)**
+- When a card is clicked/selected: add a bright blue border (2-3px solid #3B82F6)
+- Border should be rounded to match the card's border-radius
+- Add subtle blue glow/shadow for premium feel
+- Selection should persist until another card is selected
+
+**2. DRAG STATE VISUAL HIERARCHY**
+- When dragging starts: significantly increase z-index (z-index: 1000)
+- Add subtle rotation (1-2 degrees) and scale (1.02x) 
+- Add enhanced drop shadow for elevation effect
+- Card being dragged should appear above ALL other cards
+
+**3. ACTIVE/HOVER STATES**
+- Hover: subtle border highlight and slight scale (1.01x)
+- Active (being dragged): combine selection border + drag effects
+- Smooth CSS transitions for all state changes (0.2s ease)
+
+**4. MULTI-CARD VISUAL CONSISTENCY**
+- If multiple cards selected, all should have blue borders
+- During multi-drag, all selected cards get same z-index boost
+- Visual hierarchy: dragged cards always on top
+
+**SPECIFIC IMPLEMENTATION:**
+```css
+/* Selection state */
+.card-selected {
+  border: 2px solid #3B82F6;
+  box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* Drag state */
+.card-dragging {
+  z-index: 1000 !important;
+  transform: rotate(1deg) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+Please implement these visual states with smooth transitions. The user experience should feel polished and professional, exactly like modern design tools (Figma, Miro, etc.).
+
+✅ **Validation**: After implementation:
+- Click card → see blue border selection
+- Drag card → appears above others with visual effects  
+- Multiple selections → all have blue borders
+- Smooth transitions between states
+
+---
+
+## 📋 **ROADMAP UPDATE**
+
+**Phase 2.6** (Current): ✅ Visual States & Feedback  
+**Phase 3**: Canvas Controls (zoom, pan, grid)  
+**Phase 4**: Categories & Color System  
+**Phase 5**: Basic To-Do List Conversion  
+**Phase 6**: Multi-Select + Context Menu (¡aquí va tu multi-select!)  
+**Phase 7**: Group Editing & Bulk Operations  
+
+---
+
+🔄 **NEXT STEPS**:
+**Current Status**: Phase 2.6 - Visual Feedback Implementation  
+**Next**: Phase 3 - Canvas Enhancement (zoom controls, better grid)
+
+**Let me know**:
+✅ If cards now show blue borders and proper z-index - ready for Phase 3  
+🔧 If you need adjustments to the visual effects  
+❌ If selection states aren't working properly  
+
+**¡El multi-select con menú contextual será épico en Phase 6!** 🚀

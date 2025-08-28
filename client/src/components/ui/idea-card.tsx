@@ -64,9 +64,7 @@ export default function IdeaCard({
   return (
     <div
       data-testid={`idea-card-${idea.id}`}
-      className={`idea-card cursor-move select-none transition-transform hover:scale-105 ${cardStyle} ${
-        isDragging ? "z-50 rotate-2" : "z-10"
-      } ${isSelected ? "ring-2 ring-blue-400 ring-opacity-50" : ""}`}
+      className={`idea-card cursor-move select-none ${cardStyle}`}
       style={{
         width: "256px",
         padding: "16px",

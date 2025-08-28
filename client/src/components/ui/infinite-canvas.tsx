@@ -19,7 +19,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
     
-    const { draggedItem, isDragging, selectedCards, handleMouseDown, handleTouchStart } = useEnhancedDrag({
+    const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
         // Position is already in canvas coordinates, no conversion needed
         onIdeaUpdate(itemId, { 
@@ -34,13 +34,16 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
 
     // Canvas panning handlers
     const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+      // Handle selection clearing first
+      handleCanvasClick(e);
+      
       // Only start panning if clicking on empty canvas (not on cards)
       if (e.target === canvasRef.current && e.button === 0) {
         setIsPanning(true);
         setLastPanPoint({ x: e.clientX, y: e.clientY });
         e.preventDefault();
       }
-    }, []);
+    }, [handleCanvasClick]);
 
     const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
       if (isPanning && onPanChange) {

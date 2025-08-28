@@ -187,13 +187,33 @@
   animation: slideUp 0.3s ease-out;
 }
 
-/* Canvas interactions */
-.idea-card {
-  transition: transform 0.2s ease;
+/* Professional Card Selection and Drag States */
+.card-selected {
+  border: 2px solid #3B82F6 !important;
+  box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
-.idea-card:hover {
-  transform: translateY(-2px);
+.card-dragging {
+  z-index: 1000 !important;
+  transform: rotate(1deg) scale(1.02) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-multi-selected {
+  border: 2px solid #3B82F6 !important;
+  box-shadow: 0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Canvas interactions */
+.idea-card {
+  transition: all 0.2s ease !important;
+  position: relative;
+}
+
+.idea-card:hover:not(.card-dragging) {
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .draggable {
