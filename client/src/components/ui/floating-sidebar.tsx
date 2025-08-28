@@ -106,7 +106,7 @@ export default function FloatingSidebar({
 
   return (
     <>
-      <div className="fixed top-3 left-3 bottom-3 z-50 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-3 flex flex-col">
+      <div className="fixed top-3 left-3 bottom-3 z-50 w-80 bg-white/30 backdrop-blur-sm rounded-2xl border border-white/40 p-3 flex flex-col">
         {/* Header with 140px spacing from top */}
         <div className="pt-[140px] mb-8">
           <img 
