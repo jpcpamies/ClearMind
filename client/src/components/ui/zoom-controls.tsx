@@ -74,26 +74,6 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
         >
           <Maximize className="w-4 h-4" />
         </Button>
-        
-        {/* Temporary debug button */}
-        <button
-          onClick={() => {
-            console.log('🔴 DEBUG: Raw button clicked!');
-            console.log('🔴 Current zoom:', zoom);
-            alert(`DEBUG clicked! Zoom: ${Math.round(zoom * 100)}%`);
-            onResetView();
-          }}
-          style={{ 
-            background: 'red', 
-            color: 'white', 
-            padding: '4px 8px', 
-            border: 'none',
-            cursor: 'pointer',
-            marginLeft: '8px'
-          }}
-        >
-          {Math.round(zoom * 100)}%
-        </button>
       </div>
     </div>
   );
