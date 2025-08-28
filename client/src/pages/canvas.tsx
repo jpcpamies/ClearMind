@@ -62,8 +62,8 @@ export default function Canvas() {
     
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // Account for sidebar width (approximately 80px)
-    const sidebarWidth = 80;
+    // Account for sidebar width (approximately 320px for the full sidebar)
+    const sidebarWidth = 320;
     const effectiveWidth = rect.width - sidebarWidth;
     
     // Calculate the actual center of visible canvas area
@@ -71,7 +71,8 @@ export default function Canvas() {
     const viewportCenterY = rect.height / 2;
     
     // Convert screen coordinates to canvas coordinates
-    // Formula: canvas_coord = (screen_coord - pan_offset) / zoom
+    // From infinite-canvas: screenX = canvasX * zoom + panOffset.x
+    // So: canvasX = (screenX - panOffset.x) / zoom
     const canvasCenterX = (viewportCenterX - panOffset.x) / zoom;
     const canvasCenterY = (viewportCenterY - panOffset.y) / zoom;
     
@@ -90,8 +91,8 @@ export default function Canvas() {
     if (!ideasLoading && !isInitialPositioned && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       
-      // Account for sidebar width in calculations
-      const sidebarWidth = 80;
+      // Account for full sidebar width (approximately 320px)
+      const sidebarWidth = 320;
       const effectiveWidth = rect.width - sidebarWidth;
       const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
       const viewportCenterY = rect.height / 2;
@@ -101,38 +102,36 @@ export default function Canvas() {
         const bounds = calculateCardsBounds(ideas);
         
         if (bounds) {
-          // Calculate offset to center the card group with adequate padding
-          const padding = 200;
+          console.log('Card bounds:', bounds);
+          console.log('Viewport center:', { viewportCenterX, viewportCenterY });
           
-          // Adjust if cards are spread too far apart
-          const maxSpread = Math.max(bounds.width, bounds.height);
-          const adjustedZoom = maxSpread > 1000 ? 0.8 : 1; // Zoom out if cards are very spread
+          // Calculate pan offset to center the cards
+          // From infinite-canvas: screenX = canvasX * zoom + panOffset.x
+          // So for center: viewportCenterX = bounds.centerX * zoom + panOffset.x
+          // Therefore: panOffset.x = viewportCenterX - bounds.centerX * zoom
+          const offsetX = viewportCenterX - bounds.centerX * zoom;
+          const offsetY = viewportCenterY - bounds.centerY * zoom;
           
-          // Canvas transform: screen_coord = (canvas_coord + pan_offset) * zoom
-          // So: pan_offset = (screen_coord / zoom) - canvas_coord
-          const offsetX = (viewportCenterX / adjustedZoom) - bounds.centerX;
-          const offsetY = (viewportCenterY / adjustedZoom) - bounds.centerY;
+          console.log('Setting pan offset:', { offsetX, offsetY });
           
           setPanOffset({
             x: offsetX,
             y: offsetY
           });
-          
-          if (adjustedZoom !== zoom) {
-            setZoom(adjustedZoom);
-          }
         }
       } else {
         // No cards exist, center canvas at origin (0,0)
+        // To show origin at center: 0 * zoom + panOffset.x = viewportCenterX
+        // So: panOffset.x = viewportCenterX
         setPanOffset({
-          x: viewportCenterX / zoom,
-          y: viewportCenterY / zoom
+          x: viewportCenterX,
+          y: viewportCenterY
         });
       }
       
       setIsInitialPositioned(true);
     }
-  }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset, setZoom]);
+  }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset]);
 
   // Create idea mutation
   const createIdeaMutation = useMutation({
