@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Plus, Flag, List, MoreHorizontal, Check, Trash } from "lucide-react";
+import { useEscapeKey } from "@/hooks/useEscapeKey";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +69,13 @@ export default function TodoListModal({
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Handle ESC key for closing confirmation dialog
+  useEscapeKey(() => {
+    if (showDeleteConfirm) {
+      setShowDeleteConfirm(false);
+    }
+  }, showDeleteConfirm);
 
   // Fetch todo sections for this group
   const { data: todoSections = [] } = useQuery<TodoSection[]>({
@@ -441,11 +449,11 @@ export default function TodoListModal({
       <>
         {/* Backdrop */}
         <div 
-          className="fixed inset-0 bg-black/80 z-[9998]" 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[2000] overscroll-contain" 
           onClick={() => setShowDeleteConfirm(false)} 
         />
         {/* Confirmation Dialog */}
-        <div className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
+        <div className="fixed left-[50%] top-[50%] z-[2001] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg max-h-[85vh] overflow-y-auto overscroll-contain mx-4 my-4 sm:mx-auto sm:my-8 min-w-[280px] max-w-[calc(100vw-2rem)] sm:max-w-lg">
           <div className="flex flex-col space-y-2 text-center sm:text-left">
             <h2 className="text-lg font-semibold">Delete TodoList</h2>
             <p className="text-sm text-muted-foreground">
