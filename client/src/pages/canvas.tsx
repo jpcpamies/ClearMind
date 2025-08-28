@@ -71,9 +71,9 @@ export default function Canvas() {
     const viewportCenterY = rect.height / 2;
     
     // Convert screen coordinates to canvas coordinates
-    // Formula: canvas_coord = (screen_coord / zoom) - pan_offset
-    const canvasCenterX = (viewportCenterX / zoom) - panOffset.x;
-    const canvasCenterY = (viewportCenterY / zoom) - panOffset.y;
+    // Formula: canvas_coord = (screen_coord - pan_offset) / zoom
+    const canvasCenterX = (viewportCenterX - panOffset.x) / zoom;
+    const canvasCenterY = (viewportCenterY - panOffset.y) / zoom;
     
     // Add slight random offset to avoid overlapping
     const randomOffsetX = (Math.random() - 0.5) * 100; // ±50px
