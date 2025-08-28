@@ -442,34 +442,48 @@ export default function TodoListModal({
         </div>
       </DialogContent>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete TodoList</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete '{group?.name}'? 
-              <br />
-              <span className="text-destructive font-medium">This action cannot be undone.</span>
-              {ideas.length > 0 && (
-                <span className="block mt-2 text-muted-foreground">
-                  All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              data-testid="button-confirm-delete"
-              onClick={handleDeleteTodoList}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Dialog - Rendered in a portal with higher z-index */}
+      {showDeleteConfirm && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/80 z-[1002]" 
+            onClick={() => setShowDeleteConfirm(false)} 
+          />
+          {/* Confirmation Dialog */}
+          <div className="fixed left-[50%] top-[50%] z-[1003] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
+            <div className="flex flex-col space-y-2 text-center sm:text-left">
+              <h2 className="text-lg font-semibold">Delete TodoList</h2>
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete '{group?.name}'?
+                <br />
+                <span className="text-destructive font-medium">This action cannot be undone.</span>
+                {ideas.length > 0 && (
+                  <span className="block mt-2">
+                    All {ideas.length} task{ideas.length !== 1 ? 's' : ''} in this TodoList will be unassigned and moved back to the canvas.
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+              <Button
+                variant="outline"
+                data-testid="button-cancel-delete"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                data-testid="button-confirm-delete"
+                onClick={handleDeleteTodoList}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </Dialog>
   );
 }
