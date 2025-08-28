@@ -197,6 +197,11 @@ export function useEnhancedDrag({
         const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`);
         if (cardElement) {
           cardElement.classList.add('card-dragging');
+          // Apply z-index to the wrapper div for proper stacking
+          const wrapper = cardElement.parentElement;
+          if (wrapper) {
+            wrapper.style.zIndex = '1000';
+          }
         }
       });
     }
@@ -256,6 +261,11 @@ export function useEnhancedDrag({
       const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
       if (cardElement) {
         cardElement.classList.remove('card-dragging');
+        // Reset z-index on the wrapper div
+        const wrapper = cardElement.parentElement;
+        if (wrapper) {
+          wrapper.style.zIndex = '';
+        }
       }
     });
 
