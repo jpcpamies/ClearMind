@@ -187,6 +187,19 @@
   animation: slideUp 0.3s ease-out;
 }
 
+/* 
+ * COHERENT Z-INDEX HIERARCHY FOR ENTIRE UX
+ * =======================================
+ * Layer 0: Base canvas cards (z-index: 1)
+ * Layer 1: Selected cards (z-index: 10) 
+ * Layer 2: UI elements (z-index: 50)
+ * Layer 3: Dragging cards (z-index: 100)
+ * Layer 4: Dropdowns/popovers (z-index: 500)
+ * Layer 5: Modal overlays (z-index: 1000)
+ * Layer 6: Modal content (z-index: 1001)
+ * Layer 7: Tooltips/toasts (z-index: 9999)
+ */
+
 /* Professional Card Selection and Drag States */
 .idea-card {
   position: relative !important;
@@ -204,7 +217,7 @@
 
 .card-selected {
   position: relative !important;
-  z-index: 100 !important;
+  z-index: 10 !important;
   outline: 2px solid #3B82F6 !important;
   outline-offset: 1px !important;
   box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15) !important;
@@ -212,7 +225,7 @@
 
 .card-multi-selected {
   position: relative !important;
-  z-index: 100 !important;
+  z-index: 10 !important;
   outline: 2px solid #3B82F6 !important;
   outline-offset: 1px !important;
   box-shadow: 0 0 0 2px #3B82F6, 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15) !important;
@@ -220,7 +233,7 @@
 
 .card-dragging {
   position: relative !important;
-  z-index: 1000 !important;
+  z-index: 100 !important;
   transform: rotate(1deg) scale(1.02) !important;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25) !important;
   outline: 2px solid #3B82F6 !important;

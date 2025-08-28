@@ -172,7 +172,7 @@ export function useEnhancedDrag({
         // Apply higher z-index to selected cards
         const wrapper = cardElement.parentElement;
         if (wrapper) {
-          wrapper.style.zIndex = '100';
+          wrapper.style.zIndex = '10';
         }
       }
     });
@@ -210,7 +210,7 @@ export function useEnhancedDrag({
           // Apply z-index to the wrapper div for proper stacking
           const wrapper = cardElement.parentElement;
           if (wrapper) {
-            wrapper.style.zIndex = '1000';
+            wrapper.style.zIndex = '100';
           }
         }
       });
@@ -274,7 +274,7 @@ export function useEnhancedDrag({
         // Keep selected cards with higher z-index (don't reset to empty)
         const wrapper = cardElement.parentElement;
         if (wrapper && currentState.persistentSelection.has(cardId)) {
-          wrapper.style.zIndex = '100'; // Selected cards stay on top
+          wrapper.style.zIndex = '10'; // Selected cards stay on top
         } else if (wrapper) {
           wrapper.style.zIndex = ''; // Only reset unselected cards
         }
