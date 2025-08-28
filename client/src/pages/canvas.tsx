@@ -317,17 +317,15 @@ export default function Canvas() {
             />
           </div>
 
-          {/* Zoom Controls */}
-          <div className="absolute bottom-6 right-6 z-20">
-            <ZoomControls
-              zoom={zoom}
-              onZoomChange={setZoom}
-              onResetView={() => {
-                setZoom(1);
-                setPanOffset({ x: 0, y: 0 });
-              }}
-            />
-          </div>
+          {/* Zoom Controls - now positioned internally */}
+          <ZoomControls
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onResetView={() => {
+              setZoom(1);
+              setPanOffset({ x: 0, y: 0 });
+            }}
+          />
         </>
       ) : (
         <div className="pt-24 px-8 pb-8">

@@ -17,43 +17,73 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
   };
 
   return (
-    <div className="frosted-glass-bg rounded-lg p-2">
-      <div className="flex flex-col space-y-1">
+    <div 
+      className="fixed bottom-5 right-5 z-50"
+      style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '24px',
+        padding: '8px 12px'
+      }}
+    >
+      <div className="flex items-center space-x-2">
+        {/* Plus Button */}
         <Button
           variant="ghost"
           size="sm"
           data-testid="button-zoom-in"
           onClick={handleZoomIn}
-          className="h-8 w-8 p-0 hover:bg-accent"
+          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors"
+          style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}
         >
           <Plus className="w-4 h-4" />
         </Button>
         
+        {/* Zoom Percentage Display */}
+        <div 
+          className="px-3 py-1 text-xs font-medium text-center min-w-[48px] rounded-full"
+          style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          {Math.round(zoom * 100)}%
+        </div>
+        
+        {/* Minus Button */}
         <Button
           variant="ghost"
           size="sm"
           data-testid="button-zoom-out"
           onClick={handleZoomOut}
-          className="h-8 w-8 p-0 hover:bg-accent"
+          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors"
+          style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}
         >
           <Minus className="w-4 h-4" />
         </Button>
         
-        <div className="border-t border-border my-1"></div>
-        
+        {/* Fit Button */}
         <Button
           variant="ghost"
           size="sm"
           data-testid="button-reset-view"
           onClick={onResetView}
-          className="h-8 w-8 p-0 hover:bg-accent"
+          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors"
+          style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}
         >
           <Maximize className="w-4 h-4" />
         </Button>
-      </div>
-      
-      <div className="text-xs text-center text-muted-foreground mt-2 px-1">
-        {Math.round(zoom * 100)}%
       </div>
     </div>
   );
