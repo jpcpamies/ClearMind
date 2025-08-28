@@ -123,6 +123,7 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
         primaryCardElement.style.transform = transform;
         
         // Update current position for saving later (in screen coordinates)
+        // This represents the final position where the card should be placed
         setDragState(prev => ({
           ...prev,
           currentPositions: {
@@ -157,7 +158,7 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
             const transform = `translate(${dragOffsetX}px, ${dragOffsetY}px) rotate(${effects.rotation * 0.7}deg) scale(${effects.scale * 0.95})`;
             element.style.transform = transform;
             
-            // Update position for this card too
+            // Update position for this card too (final position where card should be placed)
             setDragState(prev => ({
               ...prev,
               currentPositions: {
