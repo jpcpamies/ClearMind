@@ -19,12 +19,13 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
     
-    const { draggedItem, isDragging, selectedCards, handleMouseDown, handleTouchStart, handleMouseMove, handleMouseUp } = useEnhancedDrag({
-      onDrop: (itemId, newPosition) => {
-        // Transform position back from screen coordinates to canvas coordinates
-        const canvasX = (newPosition.x - panOffset.x) / zoom;
-        const canvasY = (newPosition.y - panOffset.y) / zoom;
-        onIdeaUpdate(itemId, { canvasX, canvasY });
+    const { draggedItem, isDragging, selectedCards, handleMouseDown, handleTouchStart } = useEnhancedDrag({
+      onDrop: (itemId, canvasPosition) => {
+        // Position is already in canvas coordinates, no conversion needed
+        onIdeaUpdate(itemId, { 
+          canvasX: canvasPosition.x, 
+          canvasY: canvasPosition.y 
+        });
       },
       ideas,
       zoom,
