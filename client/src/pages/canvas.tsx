@@ -19,6 +19,7 @@ export default function Canvas() {
   const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
+  const [isInitialPositioned, setIsInitialPositioned] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -32,6 +33,81 @@ export default function Canvas() {
   const { data: groups = [], isLoading: groupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
   });
+
+  // Calculate center point of all existing cards
+  const calculateCardsBounds = (ideas: Idea[]) => {
+    if (ideas.length === 0) return null;
+    
+    const positions = ideas.map(idea => ({
+      x: idea.canvasX || 0,
+      y: idea.canvasY || 0
+    }));
+    
+    const minX = Math.min(...positions.map(p => p.x));
+    const maxX = Math.max(...positions.map(p => p.x));
+    const minY = Math.min(...positions.map(p => p.y));
+    const maxY = Math.max(...positions.map(p => p.y));
+    
+    return {
+      centerX: (minX + maxX) / 2,
+      centerY: (minY + maxY) / 2,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  };
+
+  // Get current viewport center for new cards
+  const getViewportCenter = () => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const viewportCenterX = rect.width / 2;
+    const viewportCenterY = rect.height / 2;
+    
+    // Convert screen coordinates to canvas coordinates
+    const canvasCenterX = (viewportCenterX / zoom) - panOffset.x;
+    const canvasCenterY = (viewportCenterY / zoom) - panOffset.y;
+    
+    return { x: canvasCenterX, y: canvasCenterY };
+  };
+
+  // Initialize canvas positioning when ideas load
+  useEffect(() => {
+    if (!ideasLoading && !isInitialPositioned && ideas.length > 0) {
+      const bounds = calculateCardsBounds(ideas);
+      
+      if (bounds && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const viewportCenterX = rect.width / 2;
+        const viewportCenterY = rect.height / 2;
+        
+        // Calculate offset to center the cards with padding
+        const padding = 200;
+        const offsetX = viewportCenterX / zoom - bounds.centerX;
+        const offsetY = viewportCenterY / zoom - bounds.centerY;
+        
+        setPanOffset({
+          x: offsetX,
+          y: offsetY
+        });
+      }
+      
+      setIsInitialPositioned(true);
+    } else if (!ideasLoading && !isInitialPositioned && ideas.length === 0) {
+      // No cards exist, center at origin
+      if (canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const viewportCenterX = rect.width / 2;
+        const viewportCenterY = rect.height / 2;
+        
+        setPanOffset({
+          x: viewportCenterX / zoom,
+          y: viewportCenterY / zoom
+        });
+      }
+      setIsInitialPositioned(true);
+    }
+  }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset]);
 
   // Create idea mutation
   const createIdeaMutation = useMutation({
@@ -143,8 +219,14 @@ export default function Canvas() {
       // EDITING: Update existing idea
       updateIdeaMutation.mutate({ id: editingIdeaId, ...data });
     } else {
-      // CREATING: Create new idea
-      createIdeaMutation.mutate(data);
+      // CREATING: Create new idea at viewport center
+      const viewportCenter = getViewportCenter();
+      const newIdeaData = {
+        ...data,
+        canvasX: viewportCenter.x,
+        canvasY: viewportCenter.y
+      };
+      createIdeaMutation.mutate(newIdeaData);
     }
     setIsIdeaModalOpen(false);
   };

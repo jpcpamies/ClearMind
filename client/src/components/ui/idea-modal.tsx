@@ -84,8 +84,6 @@ export default function IdeaModal({
     const submitData = {
       ...data,
       groupId: data.groupId === "unassigned" ? undefined : data.groupId,
-      canvasX: 0,
-      canvasY: 0,
       completed: false,
     };
     onSubmit(submitData);
