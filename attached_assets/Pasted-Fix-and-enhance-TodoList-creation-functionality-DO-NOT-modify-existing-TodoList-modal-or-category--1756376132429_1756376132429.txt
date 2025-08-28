@@ -1,0 +1,44 @@
+Fix and enhance TodoList creation functionality - DO NOT modify existing TodoList modal or category systems:
+
+CREATE TODOLIST BUTTON:
+- Change "Crear cuaderno" text to "Create TodoList"
+- Button should open "Create New TodoList" modal when clicked
+- Modal should allow creating TodoList from scratch OR from existing category
+
+CREATE TODOLIST MODAL:
+- Title: "Create New TodoList"
+- TodoList name input field (required)
+- Category selection dropdown (shows existing categories with color dots)
+- Option: "Create empty TodoList" OR "Import ideas from selected category"
+- If importing from category: show preview of how many ideas will be converted to tasks
+- Create button (disabled until name is entered)
+
+TODOLIST CREATION LOGIC:
+- Create new TodoList record in database with: name, category_id, user_id, created_at
+- If "Import ideas from category" selected:
+  - Convert all ideas from selected category into tasks in new TodoList
+  - Tasks inherit: title from idea.title, description from idea.description
+  - Set default priority as "Medium" for imported tasks
+  - Create "General Tasks" section by default for imported tasks
+
+DATABASE RELATIONSHIPS:
+- TodoList belongs to category (foreign key: category_id)
+- Tasks belong to TodoList (foreign key: todolist_id)
+- Maintain existing idea-category relationships (don't delete original ideas)
+- Original ideas in canvas should remain unchanged after TodoList creation
+
+TODOLIST GRID UPDATE:
+- After successful creation, close modal and refresh TodoList grid
+- New TodoList should appear immediately in grid with correct task count
+- Show success message: "TodoList '[name]' created successfully"
+- Grid card should show: category color dot, TodoList name, task count, "No tasks yet" or task summary
+
+ERROR HANDLING:
+- Validate TodoList name (minimum 2 characters, maximum 100 characters)
+- Handle duplicate names gracefully
+- Show error messages for failed creation
+- Don't close modal if creation fails
+
+DO NOT CHANGE: Existing TodoList modal functionality, task management, export features, or any working category systems.
+
+ONLY IMPLEMENT: Create TodoList modal, database operations, and grid refresh functionality.

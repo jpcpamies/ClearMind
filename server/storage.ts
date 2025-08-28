@@ -204,6 +204,26 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
+  async importIdeasFromCategoryToGroup(categoryId: string, groupId: string, userId: string): Promise<void> {
+    // Get all ideas from the category
+    const categoryIdeas = await this.getIdeasByCategory(categoryId, userId);
+    
+    // Create new ideas (tasks) in the group based on category ideas
+    for (const idea of categoryIdeas) {
+      await this.createIdea({
+        title: idea.title,
+        description: idea.description,
+        priority: "medium", // Default priority for imported tasks
+        userId: userId,
+        groupId: groupId,
+        categoryId: null, // Tasks don't belong to categories, only groups
+        canvasX: Math.random() * 400, // Random position on canvas
+        canvasY: Math.random() * 400,
+        completed: false,
+      });
+    }
+  }
+
   // TodoSections operations
   async getTodoSectionsByGroup(groupId: string, userId: string): Promise<TodoSection[]> {
     return await db

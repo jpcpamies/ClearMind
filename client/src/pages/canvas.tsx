@@ -7,6 +7,7 @@ import FloatingSidebar from "@/components/ui/floating-sidebar";
 import TodoListGrid from "@/components/ui/todolist-grid";
 import IdeaModal from "@/components/ui/idea-modal";
 import TodoListModal from "@/components/ui/todolist-modal";
+import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
 import ZoomControls from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
 import type { Idea, Group, Category } from "@shared/schema";
@@ -17,6 +18,7 @@ export default function Canvas() {
   const [currentView, setCurrentView] = useState<View>("canvas");
   const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
   const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const [isCreateTodoModalOpen, setIsCreateTodoModalOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [isInitialPositioned, setIsInitialPositioned] = useState(false);
@@ -384,7 +386,9 @@ export default function Canvas() {
           <TodoListGrid
             groups={groups}
             ideas={ideas}
+            categories={categories}
             onTodoListOpen={handleTodoListOpen}
+            onCreateTodoList={() => setIsCreateTodoModalOpen(true)}
           />
         </div>
       )}
@@ -406,6 +410,13 @@ export default function Canvas() {
         group={selectedGroupId ? groups.find(g => g.id === selectedGroupId) || null : null}
         ideas={selectedGroupId ? ideas.filter(i => i.groupId === selectedGroupId) : []}
         onIdeaUpdate={handleIdeaUpdate}
+      />
+
+      <CreateTodoListModal
+        isOpen={isCreateTodoModalOpen}
+        onClose={() => setIsCreateTodoModalOpen(false)}
+        categories={categories}
+        ideas={ideas}
       />
     </div>
   );

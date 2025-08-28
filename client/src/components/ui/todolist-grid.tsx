@@ -1,10 +1,12 @@
 import { MoreVertical, Plus } from "lucide-react";
-import type { Group, Idea } from "@shared/schema";
+import type { Group, Idea, Category } from "@shared/schema";
 
 interface TodoListGridProps {
   groups: Group[];
   ideas: Idea[];
+  categories: Category[];
   onTodoListOpen: (groupId: string) => void;
+  onCreateTodoList: () => void;
 }
 
 const priorityColors = {
@@ -14,7 +16,7 @@ const priorityColors = {
   critical: "bg-red-500",
 };
 
-export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoListGridProps) {
+export default function TodoListGrid({ groups, ideas, categories, onTodoListOpen, onCreateTodoList }: TodoListGridProps) {
   const getGroupStats = (groupId: string) => {
     const groupIdeas = ideas.filter(idea => idea.groupId === groupId);
     const stats: Record<string, number> = {};
@@ -57,7 +59,7 @@ export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoList
             alignItems: "center",
             justifyContent: "center",
           }}
-          onClick={() => {/* Handle create new notebook */}}
+          onClick={onCreateTodoList}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = "#F0F6FF";
             e.currentTarget.style.borderColor = "#4285F4";
@@ -97,7 +99,7 @@ export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoList
               margin: 0,
             }}
           >
-            Crear cuaderno
+            Create TodoList
           </h3>
         </div>
 

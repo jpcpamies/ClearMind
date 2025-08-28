@@ -210,12 +210,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/groups", auth, async (req: any, res) => {
     try {
-      const validatedData = insertGroupSchema.parse(req.body);
-      const groupData = {
+      const { categoryId, importIdeas, ...groupData } = req.body;
+      const validatedData = insertGroupSchema.parse(groupData);
+      const finalGroupData = {
         ...validatedData,
         userId: req.user.id,
       };
-      const group = await storage.createGroup(groupData);
+      
+      const group = await storage.createGroup(finalGroupData);
+      
+      // If importing ideas from category, convert them to tasks
+      if (importIdeas && categoryId) {
+        await storage.importIdeasFromCategoryToGroup(categoryId, group.id, req.user.id);
+      }
+      
       res.status(201).json(group);
     } catch (error) {
       if (error instanceof z.ZodError) {
