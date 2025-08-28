@@ -18,14 +18,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
 
   return (
     <div 
-      className="fixed bottom-5 right-5 z-[40]"
-      style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '24px',
-        padding: '8px 12px'
-      }}
+      className="fixed bottom-5 right-5 z-[40] frosted-glass-bg rounded-lg p-3"
     >
       <div className="flex items-center space-x-2">
         {/* Plus Button */}
@@ -34,24 +27,13 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
           size="sm"
           data-testid="button-zoom-in"
           onClick={handleZoomIn}
-          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors text-black"
-          style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}
+          className="h-8 w-8 p-0 rounded-lg bg-white hover:bg-gray-50 transition-colors text-black border border-gray-200"
         >
-          <Plus className="w-4 h-4 text-black" />
+          <Plus className="w-4 h-4" />
         </Button>
         
         {/* Zoom Percentage Display */}
-        <div 
-          className="px-3 py-1 text-xs font-medium text-center min-w-[48px] rounded-full text-black"
-          style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: 'black'
-          }}
-        >
+        <div className="px-3 py-1 text-xs font-medium text-center min-w-[48px] rounded-lg bg-white border border-gray-200 text-black">
           {Math.round(zoom * 100)}%
         </div>
         
@@ -61,13 +43,9 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
           size="sm"
           data-testid="button-zoom-out"
           onClick={handleZoomOut}
-          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors text-black"
-          style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}
+          className="h-8 w-8 p-0 rounded-lg bg-white hover:bg-gray-50 transition-colors text-black border border-gray-200"
         >
-          <Minus className="w-4 h-4 text-black" />
+          <Minus className="w-4 h-4" />
         </Button>
         
         {/* Fit Button */}
@@ -76,13 +54,9 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
           size="sm"
           data-testid="button-reset-view"
           onClick={onResetView}
-          className="h-8 w-8 p-0 rounded-full hover:bg-white/20 transition-colors text-black"
-          style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}
+          className="h-8 w-8 p-0 rounded-lg bg-white hover:bg-gray-50 transition-colors text-black border border-gray-200"
         >
-          <Maximize className="w-4 h-4 text-black" />
+          <Maximize className="w-4 h-4" />
         </Button>
       </div>
     </div>

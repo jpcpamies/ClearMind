@@ -207,10 +207,10 @@ export function useEnhancedDrag({
         const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`);
         if (cardElement) {
           cardElement.classList.add('card-dragging');
-          // Apply z-index to the wrapper div for proper stacking
+          // Apply z-index to the wrapper div for proper stacking (below UI elements)
           const wrapper = cardElement.parentElement;
           if (wrapper) {
-            wrapper.style.zIndex = '100';
+            wrapper.style.zIndex = '15';
           }
         }
       });

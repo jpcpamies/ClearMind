@@ -165,12 +165,15 @@ export default function Canvas() {
       const response = await apiRequest("PUT", `/api/ideas/${id}`, updates);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-      toast({
-        title: "Success",
-        description: "Idea updated successfully",
-      });
+      // Only show toast for non-position updates (avoid notifications when dragging)
+      if (!('canvasX' in variables) && !('canvasY' in variables)) {
+        toast({
+          title: "Success",
+          description: "Idea updated successfully",
+        });
+      }
     },
     onError: (error) => {
       toast({
