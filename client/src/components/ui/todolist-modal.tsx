@@ -469,16 +469,25 @@ export default function TodoListModal({
               <Button
                 variant="outline"
                 data-testid="button-cancel-delete"
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log("Cancel button clicked");
+                  setShowDeleteConfirm(false);
+                }}
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
                 data-testid="button-confirm-delete"
-                onClick={handleDeleteTodoList}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log("Delete confirmation button clicked");
+                  handleDeleteTodoList();
+                }}
+                disabled={deleteGroupMutation.isPending}
               >
-                Delete
+                {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}
               </Button>
             </div>
           </div>
