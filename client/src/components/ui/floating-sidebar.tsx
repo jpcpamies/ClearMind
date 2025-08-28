@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Group } from "@shared/schema";
+import GroupModal from "./group-modal";
 
 interface FloatingSidebarProps {
   onNewIdea: () => void;
@@ -225,6 +226,13 @@ export default function FloatingSidebar({
           )}
         </div>
       </div>
+      
+      {/* Group Modal */}
+      <GroupModal
+        isOpen={isGroupModalOpen}
+        onClose={handleCloseGroupModal}
+        editingGroup={editingGroup}
+      />
     </>
   );
 }
