@@ -218,6 +218,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import data endpoint
+  app.post("/api/import-data", auth, async (req: any, res) => {
+    try {
+      const importData = req.body;
+      
+      // Validate that it's an array of groups
+      if (!Array.isArray(importData)) {
+        return res.status(400).json({ message: "Data must be an array of groups" });
+      }
+
+      const results = {
+        groupsCreated: 0,
+        ideasCreated: 0,
+        errors: [] as string[]
+      };
+
+      for (const groupData of importData) {
+        try {
+          // Validate group structure
+          if (!groupData.name || !groupData.ideas || !Array.isArray(groupData.ideas)) {
+            results.errors.push(`Invalid group structure: ${groupData.name || 'unnamed'}`);
+            continue;
+          }
+
+          // Create group
+          const groupToValidate = {
+            name: groupData.name,
+            color: groupData.color || "#8B5CF6"
+          };
+          const validatedGroup = insertGroupSchema.parse(groupToValidate);
+          
+          const groupWithUserId = {
+            ...validatedGroup,
+            userId: req.user.id
+          };
+
+          const group = await storage.createGroup(groupWithUserId);
+          results.groupsCreated++;
+
+          // Create ideas for this group
+          for (const ideaData of groupData.ideas) {
+            try {
+              const ideaToValidate = {
+                title: ideaData.title,
+                description: ideaData.description || "",
+                priority: ideaData.priority || "medium",
+                groupId: group.id,
+                canvasX: Math.random() * 800 + 100, // Random position
+                canvasY: Math.random() * 400 + 100,
+                completed: false
+              };
+              const validatedIdea = insertIdeaSchema.parse(ideaToValidate);
+              
+              const ideaWithUserId = {
+                ...validatedIdea,
+                userId: req.user.id
+              };
+
+              await storage.createIdea(ideaWithUserId);
+              results.ideasCreated++;
+            } catch (ideaError) {
+              results.errors.push(`Failed to create idea "${ideaData.title}": ${ideaError}`);
+            }
+          }
+        } catch (groupError) {
+          results.errors.push(`Failed to create group "${groupData.name}": ${groupError}`);
+        }
+      }
+
+      res.json({
+        message: "Import completed",
+        ...results
+      });
+    } catch (error) {
+      console.error("Error importing data:", error);
+      res.status(500).json({ message: "Failed to import data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

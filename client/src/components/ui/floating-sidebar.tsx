@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Edit2, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Edit2, Trash2, Upload } from "lucide-react";
 import logoUrl from "@assets/logo-clearming_1756380749140.png";
 import { Button } from "./button";
+import { Input } from "./input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +89,61 @@ export default function FloatingSidebar({
     setEditingGroup(null);
   };
 
+  // Import JSON file mutation
+  const importDataMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/import-data", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Import successful",
+        description: "Data has been imported successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+    },
+    onError: (error) => {
+      console.error("Import failed:", error);
+      toast({
+        title: "Import failed",
+        description: "Failed to import data. Please check your file format.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.json')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JSON file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonData = JSON.parse(e.target?.result as string);
+        importDataMutation.mutate(jsonData);
+      } catch (error) {
+        toast({
+          title: "Invalid JSON",
+          description: "The uploaded file contains invalid JSON.",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    event.target.value = '';
+  };
+
   const getColorClass = (color: string) => {
     // Return the color as-is since it's now a flexible CSS color value
     return color || "#8B5CF6";
@@ -118,6 +174,30 @@ export default function FloatingSidebar({
           />
           <h2 className="text-xl font-semibold text-gray-900 mb-1">Hello Demo User</h2>
           <p className="text-sm text-gray-600">What ideas do you have today?</p>
+        </div>
+
+        {/* Import JSON File */}
+        <div className="mb-4">
+          <label 
+            htmlFor="json-import" 
+            className="flex items-center justify-center w-full py-2 px-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+            data-testid="import-file-area"
+          >
+            <Upload className="w-4 h-4 mr-2 text-gray-600" />
+            <span className="text-sm text-gray-600">Import JSON file</span>
+            <Input
+              id="json-import"
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="hidden"
+              data-testid="input-import-file"
+              disabled={importDataMutation.isPending}
+            />
+          </label>
+          {importDataMutation.isPending && (
+            <p className="text-xs text-gray-500 mt-1 text-center">Processing...</p>
+          )}
         </div>
 
         {/* New Idea Button */}
