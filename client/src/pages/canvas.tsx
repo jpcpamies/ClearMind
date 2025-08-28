@@ -9,7 +9,7 @@ import IdeaModal from "@/components/ui/idea-modal";
 import TodoListModal from "@/components/ui/todolist-modal";
 import ZoomControls from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
-import type { Idea, Group } from "@shared/schema";
+import type { Idea, Group, Category } from "@shared/schema";
 
 type View = "canvas" | "todolist";
 
@@ -32,6 +32,10 @@ export default function Canvas() {
 
   const { data: groups = [], isLoading: groupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
+  });
+
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
   });
 
   // Calculate center point of all existing cards
@@ -344,10 +348,8 @@ export default function Canvas() {
           {/* Left Floating Sidebar */}
           <div className="absolute top-3 left-3 z-20">
             <FloatingSidebar
-              groups={groups}
               onNewIdea={handleNewIdea}
               onTodoListOpen={handleTodoListOpen}
-              onCreateGroup={createGroupMutation.mutate}
             />
           </div>
 
@@ -357,6 +359,7 @@ export default function Canvas() {
               ref={canvasRef}
               ideas={ideas}
               groups={groups}
+              categories={categories}
               zoom={zoom}
               panOffset={panOffset}
               onIdeaUpdate={handleIdeaUpdate}

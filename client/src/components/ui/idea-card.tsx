@@ -7,12 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import type { Idea, Group } from "@shared/schema";
+import type { Idea, Group, Category } from "@shared/schema";
 
 interface IdeaCardProps {
   idea: Idea;
   group?: Group;
+  category?: Category;
   color: string;
+  categoryColor?: string | null;
   position: { x: number; y: number };
   isDragging: boolean;
   isSelected: boolean;
@@ -41,7 +43,9 @@ const priorityColors = {
 export default function IdeaCard({
   idea,
   group,
+  category,
   color,
+  categoryColor,
   position,
   isDragging,
   isSelected,
@@ -72,6 +76,8 @@ export default function IdeaCard({
         padding: "16px",
         borderRadius: "12px",
         boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+        borderLeft: categoryColor ? `4px solid ${categoryColor}` : undefined,
+        paddingLeft: categoryColor ? "12px" : "16px", // Adjust padding when border is present
       }}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}

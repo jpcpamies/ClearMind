@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema } from "@shared/schema";
+import { insertIdeaSchema, insertGroupSchema, insertCategorySchema, insertTodoSectionSchema } from "@shared/schema";
 import { auth } from "./middleware/auth";
 import { z } from "zod";
 
@@ -84,7 +84,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Groups routes
+  // Categories routes  
+  app.get("/api/categories", auth, async (req: any, res) => {
+    try {
+      // Ensure default categories exist
+      await storage.ensureDefaultCategories(req.user.id);
+      const categories = await storage.getAllCategories(req.user.id);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.get("/api/categories/:id", auth, async (req: any, res) => {
+    try {
+      const category = await storage.getCategory(req.params.id, req.user.id);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ message: "Failed to fetch category" });
+    }
+  });
+
+  app.get("/api/categories/:id/with-ideas", auth, async (req: any, res) => {
+    try {
+      const categoryWithIdeas = await storage.getCategoryWithIdeas(req.params.id, req.user.id);
+      if (!categoryWithIdeas) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(categoryWithIdeas);
+    } catch (error) {
+      console.error("Error fetching category with ideas:", error);
+      res.status(500).json({ message: "Failed to fetch category with ideas" });
+    }
+  });
+
+  app.post("/api/categories", auth, async (req: any, res) => {
+    try {
+      const validatedData = insertCategorySchema.parse(req.body);
+      const categoryData = {
+        ...validatedData,
+        userId: req.user.id,
+      };
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.put("/api/categories/:id", auth, async (req: any, res) => {
+    try {
+      const validatedData = insertCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCategory(req.params.id, validatedData, req.user.id);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/categories/:id", auth, async (req: any, res) => {
+    try {
+      const deleted = await storage.deleteCategory(req.params.id, req.user.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  // Groups routes (legacy - maintained for compatibility)
   app.get("/api/groups", auth, async (req: any, res) => {
     try {
       const groups = await storage.getAllGroups(req.user.id);

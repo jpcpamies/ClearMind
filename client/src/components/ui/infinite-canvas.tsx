@@ -1,11 +1,12 @@
 import { forwardRef, useRef, useEffect, useState, useCallback } from "react";
 import { useEnhancedDrag } from "@/hooks/use-enhanced-drag";
 import IdeaCard from "./idea-card";
-import type { Idea, Group } from "@shared/schema";
+import type { Idea, Group, Category } from "@shared/schema";
 
 interface InfiniteCanvasProps {
   ideas: Idea[];
   groups: Group[];
+  categories: Category[];
   zoom: number;
   panOffset: { x: number; y: number };
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
@@ -15,7 +16,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onPanChange }, ref) => {
+  ({ ideas, groups, categories, zoom, panOffset, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onPanChange }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -83,6 +84,46 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       return group?.color || "unassigned";
     };
 
+    const getCategoryColor = (categoryId: string | null) => {
+      if (!categoryId) return null;
+      const category = categories.find(c => c.id === categoryId);
+      return category?.color || null;
+    };
+
+    // Group ideas by category for visual grouping effects
+    const groupedIdeas = ideas.reduce((acc, idea) => {
+      const categoryId = idea.categoryId || "uncategorized";
+      if (!acc[categoryId]) {
+        acc[categoryId] = [];
+      }
+      acc[categoryId].push(idea);
+      return acc;
+    }, {} as Record<string, typeof ideas>);
+
+    // Calculate center points for category groups to show subtle background circles
+    const getCategoryGroupCenter = (categoryIdeas: typeof ideas) => {
+      if (categoryIdeas.length < 2) return null;
+      
+      const positions = categoryIdeas.map(idea => ({
+        x: (idea.canvasX || 0) * zoom + panOffset.x,
+        y: (idea.canvasY || 0) * zoom + panOffset.y
+      }));
+      
+      const centerX = positions.reduce((sum, pos) => sum + pos.x, 0) / positions.length;
+      const centerY = positions.reduce((sum, pos) => sum + pos.y, 0) / positions.length;
+      
+      // Calculate radius based on the spread of ideas
+      const maxDistance = Math.max(...positions.map(pos => 
+        Math.sqrt(Math.pow(pos.x - centerX, 2) + Math.pow(pos.y - centerY, 2))
+      ));
+      
+      return {
+        x: centerX,
+        y: centerY,
+        radius: Math.max(150, maxDistance + 50) // Minimum radius of 150px
+      };
+    };
+
     return (
       <div
         ref={canvasRef}
@@ -106,6 +147,36 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
             zIndex: -10,
           }}
         />
+
+        {/* Category grouping visual effects - subtle background circles */}
+        {Object.entries(groupedIdeas).map(([categoryId, categoryIdeas]) => {
+          if (categoryId === "uncategorized" || categoryIdeas.length < 2) return null;
+          
+          const groupCenter = getCategoryGroupCenter(categoryIdeas);
+          if (!groupCenter) return null;
+          
+          const category = categories.find(c => c.id === categoryId);
+          if (!category) return null;
+          
+          return (
+            <div
+              key={`category-group-${categoryId}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: groupCenter.x - groupCenter.radius,
+                top: groupCenter.y - groupCenter.radius,
+                width: groupCenter.radius * 2,
+                height: groupCenter.radius * 2,
+                borderRadius: '50%',
+                backgroundColor: `${category.color}10`, // Very subtle background
+                border: `2px solid ${category.color}20`, // Subtle border
+                zIndex: -5,
+              }}
+              data-testid={`category-group-${categoryId}`}
+            />
+          );
+        })}
+
         {ideas.map((idea) => {
           // Transform canvas coordinates to screen coordinates with proper zoom and pan
           const canvasX = idea.canvasX || 0;
@@ -127,7 +198,9 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
               <IdeaCard
                 idea={idea}
                 group={groups.find(g => g.id === idea.groupId)}
+                category={categories.find(c => c.id === idea.categoryId)}
                 color={getGroupColor(idea.groupId)}
+                categoryColor={getCategoryColor(idea.categoryId)}
                 position={{ x: 0, y: 0 }} // Position is handled by the wrapper div
                 isDragging={isDragging && draggedItem?.id === idea.id}
                 onMouseDown={(e) => {

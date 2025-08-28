@@ -1,0 +1,60 @@
+Implement comprehensive category and color system with custom color picker for idea organization:
+
+CATEGORY SYSTEM:
+- Extend existing database to support categories with colors
+- Each idea can be assigned to one category (relationship: idea -> category)
+- Categories have: name, color (hex), creation date, user ownership
+- Default categories on new user: "General" (#6366f1), "Work" (#10b981), "Personal" (#f59e0b)
+
+VISUAL GROUPING ON CANVAS:
+- Ideas display category color as left border (4px thick colored bar)
+- Group ideas visually by category with subtle background regions
+- Add category name labels that appear when hovering over grouped areas
+- Cards of same category should have visual connection/grouping effect
+
+CATEGORY MANAGEMENT IN SIDEBAR:
+- Replace current "IDEA GROUPS" section with "CATEGORIES" 
+- Show each category with: colored dot, name, idea count
+- Add + button to create new categories with color selection
+- Category context menu (right-click): Edit name, Change color, Delete category
+- When deleting category, move ideas to "General" category
+
+CUSTOM COLOR PICKER SYSTEM:
+- In category creation/edit modal, show predefined palette first: 8 color swatches
+- Add "Custom Color" button that opens color picker wheel
+- Use HTML5 color input type="color" or implement react-color library if available
+- Color picker features: color wheel, hex input field, RGB values display
+- Show live preview of selected color on category dot while picking
+- Include color preview with category name to show final result
+
+COLOR PICKER UI:
+- Modal layout: predefined colors grid (2x4) at top, custom picker below
+- Selected color shows active state (border highlight)
+- Custom color section: color wheel + hex input + RGB values
+- Live preview updates category dot in real-time as user picks color
+- "Save" and "Cancel" buttons for color selection confirmation
+
+DATABASE PERSISTENCE:
+- Ensure categories table stores hex color values correctly (VARCHAR(7) for #RRGGBB)
+- Update category color immediately in database when saved
+- All UI elements reflect new color instantly after database update
+- Validate hex color format before saving to database
+
+IDEA ASSIGNMENT:
+- In "New Idea" modal, add category dropdown selector
+- In edit idea modal, add category change option  
+- Show selected category with color preview in modals
+- Allow bulk category assignment for selected ideas
+- Default new ideas to "General" category if none selected
+
+COLOR SYSTEM SPECIFICATIONS:
+- Predefined palette: #6366f1, #10b981, #f59e0b, #ef4444, #8b5cf6, #06b6d4, #f97316, #84cc16
+- Custom colors: any valid hex color from color picker
+- Ensure colors have good contrast for accessibility (test against white backgrounds)
+- Color consistency across: sidebar dots, card borders, labels, modal previews
+
+UPDATE EXISTING FUNCTIONALITY:
+- Maintain all current drag & drop, zoom, positioning features
+- Categories should not affect existing canvas behavior
+- Ideas without category default to "General"
+- All existing modals and UI should continue working exactly as before
