@@ -100,13 +100,13 @@ export default function FloatingSidebar({
 
   return (
     <>
-      <div className="fixed top-4 left-4 z-50 w-80 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-6">
-        {/* Header */}
-        <div className="mb-8">
+      <div className="fixed top-3 left-3 bottom-3 z-50 w-80 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-3 flex flex-col">
+        {/* Header with 140px spacing from top */}
+        <div className="pt-[140px] mb-8">
           <img 
             src={logoUrl} 
             alt="ClearMind Logo" 
-            className="h-10 mb-4"
+            className="w-[140px] h-auto mb-4"
             data-testid="logo"
           />
           <h2 className="text-xl font-semibold text-gray-900 mb-1">Hello Demo User</h2>
@@ -124,7 +124,7 @@ export default function FloatingSidebar({
         </Button>
 
         {/* Idea Groups Section */}
-        <div className="mb-6">
+        <div className="flex-1 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-gray-700 uppercase tracking-wide">IDEA GROUPS</h3>
             <Button
