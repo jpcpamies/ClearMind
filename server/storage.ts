@@ -19,14 +19,14 @@ export interface IStorage {
   // Ideas operations
   getAllIdeas(userId: string): Promise<Idea[]>;
   getIdea(id: string, userId: string): Promise<Idea | undefined>;
-  createIdea(idea: InsertIdea): Promise<Idea>;
+  createIdea(ideaData: InsertIdea & { userId: string }): Promise<Idea>;
   updateIdea(id: string, updates: Partial<InsertIdea>, userId: string): Promise<Idea | null>;
   deleteIdea(id: string, userId: string): Promise<boolean>;
 
   // Categories operations
   getAllCategories(userId: string): Promise<Category[]>;
   getCategory(id: string, userId: string): Promise<Category | undefined>;
-  createCategory(category: InsertCategory): Promise<Category>;
+  createCategory(categoryData: InsertCategory & { userId: string }): Promise<Category>;
   updateCategory(id: string, updates: Partial<InsertCategory>, userId: string): Promise<Category | null>;
   deleteCategory(id: string, userId: string): Promise<boolean>;
   ensureDefaultCategories(userId: string): Promise<Category[]>;
@@ -63,10 +63,10 @@ export class DatabaseStorage implements IStorage {
     return idea;
   }
 
-  async createIdea(idea: InsertIdea): Promise<Idea> {
+  async createIdea(ideaData: InsertIdea & { userId: string }): Promise<Idea> {
     const [newIdea] = await db
       .insert(ideas)
-      .values({ ...idea, updatedAt: new Date() })
+      .values(ideaData)
       .returning();
     return newIdea;
   }
@@ -74,7 +74,7 @@ export class DatabaseStorage implements IStorage {
   async updateIdea(id: string, updates: Partial<InsertIdea>, userId: string): Promise<Idea | null> {
     const [updatedIdea] = await db
       .update(ideas)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updates)
       .where(and(eq(ideas.id, id), eq(ideas.userId, userId)))
       .returning();
     return updatedIdea || null;
@@ -95,10 +95,10 @@ export class DatabaseStorage implements IStorage {
     return category;
   }
 
-  async createCategory(category: InsertCategory): Promise<Category> {
+  async createCategory(categoryData: InsertCategory & { userId: string }): Promise<Category> {
     const [newCategory] = await db
       .insert(categories)
-      .values({ ...category, updatedAt: new Date() })
+      .values(categoryData)
       .returning();
     return newCategory;
   }
@@ -106,7 +106,7 @@ export class DatabaseStorage implements IStorage {
   async updateCategory(id: string, updates: Partial<InsertCategory>, userId: string): Promise<Category | null> {
     const [updatedCategory] = await db
       .update(categories)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updates)
       .where(and(eq(categories.id, id), eq(categories.userId, userId)))
       .returning();
     return updatedCategory || null;
@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
   async ensureDefaultCategories(userId: string): Promise<Category[]> {
     const existingCategories = await this.getAllCategories(userId);
     
-    const defaultCategories = [
+    const defaultCategories: Array<InsertCategory & { userId: string }> = [
       { name: "General", color: "#6366f1", userId },
       { name: "Work", color: "#10b981", userId },
       { name: "Personal", color: "#f59e0b", userId },
@@ -176,7 +176,7 @@ export class DatabaseStorage implements IStorage {
   async createGroup(group: InsertGroup): Promise<Group> {
     const [newGroup] = await db
       .insert(groups)
-      .values({ ...group, updatedAt: new Date() })
+      .values(group)
       .returning();
     return newGroup;
   }
@@ -184,7 +184,7 @@ export class DatabaseStorage implements IStorage {
   async updateGroup(id: string, updates: Partial<InsertGroup>, userId: string): Promise<Group | null> {
     const [updatedGroup] = await db
       .update(groups)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updates)
       .where(and(eq(groups.id, id), eq(groups.userId, userId)))
       .returning();
     return updatedGroup || null;
@@ -216,7 +216,7 @@ export class DatabaseStorage implements IStorage {
         priority: "medium", // Default priority for imported tasks
         userId: userId,
         groupId: groupId,
-        categoryId: null, // Tasks don't belong to categories, only groups
+        categoryId: undefined, // Tasks don't belong to categories, only groups
         canvasX: Math.random() * 400, // Random position on canvas
         canvasY: Math.random() * 400,
         completed: false,
