@@ -104,9 +104,6 @@ export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoList
         {/* Existing Group Cards */}
         {groups.map((group) => {
           const { total, stats } = getGroupStats(group.id);
-          const groupEmoji = group.color === 'purple' ? '💜' : 
-                           group.color === 'blue' ? '💙' :
-                           group.color === 'green' ? '💚' : '🧡';
           
           return (
             <div
@@ -140,15 +137,16 @@ export default function TodoListGrid({ groups, ideas, onTodoListOpen }: TodoList
                 />
               </div>
 
-              {/* Icon */}
+              {/* Color Dot Icon */}
               <div
                 style={{
-                  fontSize: "32px",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
                   marginBottom: "8px",
                 }}
-              >
-                {groupEmoji}
-              </div>
+                className={getColorClass(group.color)}
+              />
 
               {/* Title */}
               <h3
