@@ -154,6 +154,11 @@ export function useEnhancedDrag({
     // Apply selection visual state immediately
     document.querySelectorAll('.idea-card').forEach(card => {
       card.classList.remove('card-selected', 'card-multi-selected');
+      // Reset z-index for all unselected cards
+      const wrapper = card.parentElement;
+      if (wrapper) {
+        wrapper.style.zIndex = '';
+      }
     });
 
     persistentSelection.forEach(cardId => {
@@ -163,6 +168,11 @@ export function useEnhancedDrag({
           cardElement.classList.add('card-selected');
         } else {
           cardElement.classList.add('card-multi-selected');
+        }
+        // Apply higher z-index to selected cards
+        const wrapper = cardElement.parentElement;
+        if (wrapper) {
+          wrapper.style.zIndex = '100';
         }
       }
     });
@@ -261,10 +271,12 @@ export function useEnhancedDrag({
       const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
       if (cardElement) {
         cardElement.classList.remove('card-dragging');
-        // Reset z-index on the wrapper div
+        // Keep selected cards with higher z-index (don't reset to empty)
         const wrapper = cardElement.parentElement;
-        if (wrapper) {
-          wrapper.style.zIndex = '';
+        if (wrapper && currentState.persistentSelection.has(cardId)) {
+          wrapper.style.zIndex = '100'; // Selected cards stay on top
+        } else if (wrapper) {
+          wrapper.style.zIndex = ''; // Only reset unselected cards
         }
       }
     });
@@ -321,6 +333,11 @@ export function useEnhancedDrag({
       // Clear all selection visual states
       document.querySelectorAll('.idea-card').forEach(card => {
         card.classList.remove('card-selected', 'card-multi-selected');
+        // Reset z-index when clearing selections
+        const wrapper = card.parentElement;
+        if (wrapper) {
+          wrapper.style.zIndex = '';
+        }
       });
       
       setDragState(prev => ({
