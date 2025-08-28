@@ -179,13 +179,8 @@ export default function TodoListModal({
   };
 
   const handleDeleteTodoList = () => {
-    console.log("HandleDeleteTodoList called with groupId:", groupId);
-    if (!groupId) {
-      console.error("No groupId provided");
-      return;
-    }
+    if (!groupId) return;
     setShowDeleteConfirm(false);
-    console.log("About to call deleteGroupMutation.mutate");
     deleteGroupMutation.mutate(groupId);
   };
 
@@ -424,11 +419,7 @@ export default function TodoListModal({
               variant="destructive" 
               size="sm"
               data-testid="button-delete-todolist"
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log("Delete button clicked, showing confirmation dialog");
-                setShowDeleteConfirm(true);
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteGroupMutation.isPending}
             >
               <Trash className="w-3 h-3 mr-1" />
@@ -442,16 +433,16 @@ export default function TodoListModal({
         </div>
       </DialogContent>
 
-      {/* Delete Confirmation Dialog - Rendered in a portal with higher z-index */}
+      {/* Delete Confirmation Dialog - Rendered with very high z-index */}
       {showDeleteConfirm && (
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/80 z-[1002]" 
+            className="fixed inset-0 bg-black/80 z-[9998]" 
             onClick={() => setShowDeleteConfirm(false)} 
           />
           {/* Confirmation Dialog */}
-          <div className="fixed left-[50%] top-[50%] z-[1003] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
+          <div className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-lg">
             <div className="flex flex-col space-y-2 text-center sm:text-left">
               <h2 className="text-lg font-semibold">Delete TodoList</h2>
               <p className="text-sm text-muted-foreground">
@@ -469,22 +460,14 @@ export default function TodoListModal({
               <Button
                 variant="outline"
                 data-testid="button-cancel-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("Cancel button clicked");
-                  setShowDeleteConfirm(false);
-                }}
+                onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
                 data-testid="button-confirm-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("Delete confirmation button clicked");
-                  handleDeleteTodoList();
-                }}
+                onClick={handleDeleteTodoList}
                 disabled={deleteGroupMutation.isPending}
               >
                 {deleteGroupMutation.isPending ? "Deleting..." : "Delete"}

@@ -253,14 +253,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/groups/:id", auth, async (req: any, res) => {
     try {
-      console.log(`DELETE /api/groups/${req.params.id} called by user ${req.user.id}`);
       const deleted = await storage.deleteGroup(req.params.id, req.user.id);
-      console.log("Delete operation result:", deleted);
       if (!deleted) {
-        console.log("Group not found or not belonging to user");
         return res.status(404).json({ message: "Group not found" });
       }
-      console.log("Group deleted successfully");
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting group:", error);
