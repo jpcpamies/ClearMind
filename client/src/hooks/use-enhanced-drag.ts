@@ -114,7 +114,12 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
         const newScreenX = Math.round(mouseX - currentState.offset.x);
         const newScreenY = Math.round(mouseY - currentState.offset.y);
         
-        const transform = `translate(${newScreenX}px, ${newScreenY}px) rotate(${effects.rotation}deg) scale(${effects.scale})`;
+        // Apply transform relative to the card's container position (which is already positioned by InfiniteCanvas)
+        // Since the card is already positioned by the parent container, we only need to apply the drag offset
+        const dragOffsetX = newScreenX - currentState.initialPositions[currentState.dragCardId!].x;
+        const dragOffsetY = newScreenY - currentState.initialPositions[currentState.dragCardId!].y;
+        
+        const transform = `translate(${dragOffsetX}px, ${dragOffsetY}px) rotate(${effects.rotation}deg) scale(${effects.scale})`;
         primaryCardElement.style.transform = transform;
         
         // Update current position for saving later (in screen coordinates)
@@ -145,7 +150,11 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
             const newScreenX = Math.round((mouseX - currentState.offset.x) + relativeX);
             const newScreenY = Math.round((mouseY - currentState.offset.y) + relativeY);
             
-            const transform = `translate(${newScreenX}px, ${newScreenY}px) rotate(${effects.rotation * 0.7}deg) scale(${effects.scale * 0.95})`;
+            // Calculate drag offset relative to this card's initial position
+            const dragOffsetX = newScreenX - initialPos.x;
+            const dragOffsetY = newScreenY - initialPos.y;
+            
+            const transform = `translate(${dragOffsetX}px, ${dragOffsetY}px) rotate(${effects.rotation * 0.7}deg) scale(${effects.scale * 0.95})`;
             element.style.transform = transform;
             
             // Update position for this card too
@@ -183,16 +192,17 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
       x: currentIdea?.canvasX || 0, 
       y: currentIdea?.canvasY || 0 
     };
-    const currentScreenPos = {
-      x: canvasPos.x * zoom + panOffset.x,
-      y: canvasPos.y * zoom + panOffset.y
-    };
-
-    // Calculate precise offset from mouse to card's current screen position
-    // Account for the element's bounding box position instead of calculated position
+    
+    // Calculate the actual screen position where the card should be
+    // This matches the positioning logic in InfiniteCanvas
+    const actualScreenX = canvasPos.x * zoom + panOffset.x;
+    const actualScreenY = canvasPos.y * zoom + panOffset.y;
+    
+    // Calculate offset from mouse to the card's logical position (not DOM position)
+    // This ensures the card follows the mouse correctly from the moment of click
     const offset = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX - actualScreenX,
+      y: e.clientY - actualScreenY,
     };
 
     let selectedCards = new Set<string>();
@@ -207,7 +217,7 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
       selectedCards.add(item.id);
     }
 
-    // Store initial positions and elements for all selected cards (using actual element positions)
+    // Store initial positions and elements for all selected cards (using logical positions)
     selectedCards.forEach(cardId => {
       // Find card element
       const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
@@ -216,11 +226,17 @@ export function useEnhancedDrag({ onDrop, ideas, zoom = 1, panOffset = { x: 0, y
         // Apply dragging class with immediate visual feedback
         cardElement.classList.add('dragging-card');
         
-        // Get the actual element's current position on screen
-        const cardRect = cardElement.getBoundingClientRect();
+        // Calculate logical screen position based on canvas coordinates
+        const cardIdea = ideas.find(idea => idea.id === cardId);
+        const cardCanvasPos = {
+          x: cardIdea?.canvasX || 0,
+          y: cardIdea?.canvasY || 0
+        };
+        
+        // Use the same logic as InfiniteCanvas for positioning
         initialPositions[cardId] = {
-          x: cardRect.left,
-          y: cardRect.top
+          x: cardCanvasPos.x * zoom + panOffset.x,
+          y: cardCanvasPos.y * zoom + panOffset.y
         };
       }
     });
