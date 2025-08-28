@@ -9,11 +9,23 @@ interface ZoomControlsProps {
 
 export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomControlsProps) {
   const handleZoomIn = () => {
+    console.log('🔍 Zoom in clicked');
     onZoomChange(Math.min(zoom * 1.2, 3));
   };
 
   const handleZoomOut = () => {
+    console.log('🔍 Zoom out clicked');
     onZoomChange(Math.max(zoom * 0.8, 0.3));
+  };
+  
+  const handleResetClick = (e: React.MouseEvent) => {
+    console.log('🎯 Reset view button clicked in ZoomControls');
+    console.log('🎯 Event details:', e.currentTarget, e.target);
+    console.log('🎯 onResetView function:', onResetView);
+    e.preventDefault();
+    e.stopPropagation();
+    onResetView();
+    console.log('🎯 onResetView called!');
   };
 
   return (
@@ -53,11 +65,32 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
           variant="ghost"
           size="sm"
           data-testid="button-reset-view"
-          onClick={onResetView}
+          onClick={handleResetClick}
+          onMouseDown={(e) => console.log('🎯 Mouse down on fit button')}
+          onMouseUp={(e) => console.log('🎯 Mouse up on fit button')}
           className="h-8 w-8 p-0 rounded-lg bg-white hover:bg-gray-50 transition-colors text-black border border-gray-200"
+          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
         >
           <Maximize className="w-4 h-4" />
         </Button>
+        
+        {/* Temporary debug button */}
+        <button
+          onClick={() => {
+            console.log('🔴 DEBUG: Raw button clicked!');
+            onResetView();
+          }}
+          style={{ 
+            background: 'red', 
+            color: 'white', 
+            padding: '4px 8px', 
+            border: 'none',
+            cursor: 'pointer',
+            marginLeft: '8px'
+          }}
+        >
+          DEBUG
+        </button>
       </div>
     </div>
   );

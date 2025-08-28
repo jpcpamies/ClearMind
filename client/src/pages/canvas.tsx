@@ -280,21 +280,58 @@ export default function Canvas() {
   };
 
   const handleResetView = () => {
-    if (!canvasRef.current) return;
+    console.log('🎯 Fit to canvas button clicked!');
+    
+    if (!canvasRef.current) {
+      console.log('❌ No canvas ref available');
+      return;
+    }
     
     const rect = canvasRef.current.getBoundingClientRect();
-    // Sidebar is w-80 (320px) + left-3 (12px) = 332px total occupied space
-    const sidebarOccupiedSpace = 332;
+    console.log('📐 Canvas dimensions:', rect);
+    
+    // Calculate actual sidebar occupied space by finding the floating sidebar
+    // Look for the specific sidebar by its unique class combination
+    const sidebarElement = document.querySelector('.fixed.top-3.left-3.bottom-3.z-floating.w-80');
+    let sidebarOccupiedSpace = 332; // fallback
+    
+    if (sidebarElement) {
+      const sidebarRect = sidebarElement.getBoundingClientRect();
+      sidebarOccupiedSpace = sidebarRect.right; // Distance from left edge to right edge of sidebar
+      console.log('🔍 Actual sidebar occupied space:', sidebarOccupiedSpace, 'px');
+      console.log('🔍 Sidebar rect:', sidebarRect);
+    } else {
+      console.log('⚠️ Could not find sidebar element, using fallback:', sidebarOccupiedSpace, 'px');
+      // Let's also list all elements with z-floating to debug
+      const floatingElements = document.querySelectorAll('.z-floating');
+      console.log('🔍 Found', floatingElements.length, 'floating elements:', floatingElements);
+    }
+    
     const effectiveWidth = rect.width - sidebarOccupiedSpace;
     const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
     const viewportCenterY = rect.height / 2;
     
+    console.log('🎯 Viewport center:', { viewportCenterX, viewportCenterY });
+    console.log('📱 Current zoom:', zoom);
+    console.log('🎮 Current pan offset:', panOffset);
+    
     // Always set zoom to 100% (1.0)
+    console.log('⚡ Setting zoom to 1.0');
     setZoom(1);
     
     if (ideas.length > 0) {
+      console.log('🃏 Found', ideas.length, 'cards');
+      console.log('🃏 Card positions:', ideas.map(idea => ({ 
+        id: idea.id, 
+        title: idea.title, 
+        canvasX: idea.canvasX, 
+        canvasY: idea.canvasY 
+      })));
+      
       // Center on existing cards with correct transformation
       const bounds = calculateCardsBounds(ideas);
+      console.log('📊 Card bounds:', bounds);
+      
       if (bounds) {
         // Transform formula: screenPos = canvasPos * zoom + panOffset
         // We want the center of all cards to appear at viewportCenter
@@ -303,9 +340,13 @@ export default function Canvas() {
         const offsetX = viewportCenterX - bounds.centerX;
         const offsetY = viewportCenterY - bounds.centerY;
         
+        console.log('🎯 Calculated new pan offset:', { offsetX, offsetY });
+        console.log('🎯 Setting pan offset...');
         setPanOffset({ x: offsetX, y: offsetY });
+        console.log('✅ Pan offset set!');
       }
     } else {
+      console.log('📭 No cards found, centering origin');
       // Center the origin (0,0) in the viewport
       setPanOffset({ x: viewportCenterX, y: viewportCenterY });
     }
