@@ -56,58 +56,83 @@ export default function Canvas() {
     };
   };
 
-  // Get current viewport center for new cards
+  // Get current viewport center for new cards with random offset
   const getViewportCenter = () => {
     if (!canvasRef.current) return { x: 0, y: 0 };
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const viewportCenterX = rect.width / 2;
+    
+    // Account for sidebar width (approximately 80px)
+    const sidebarWidth = 80;
+    const effectiveWidth = rect.width - sidebarWidth;
+    
+    // Calculate the actual center of visible canvas area
+    const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
     const viewportCenterY = rect.height / 2;
     
     // Convert screen coordinates to canvas coordinates
+    // Formula: canvas_coord = (screen_coord / zoom) - pan_offset
     const canvasCenterX = (viewportCenterX / zoom) - panOffset.x;
     const canvasCenterY = (viewportCenterY / zoom) - panOffset.y;
     
-    return { x: canvasCenterX, y: canvasCenterY };
+    // Add slight random offset to avoid overlapping
+    const randomOffsetX = (Math.random() - 0.5) * 100; // ±50px
+    const randomOffsetY = (Math.random() - 0.5) * 100; // ±50px
+    
+    return { 
+      x: canvasCenterX + randomOffsetX, 
+      y: canvasCenterY + randomOffsetY 
+    };
   };
 
   // Initialize canvas positioning when ideas load
   useEffect(() => {
-    if (!ideasLoading && !isInitialPositioned && ideas.length > 0) {
-      const bounds = calculateCardsBounds(ideas);
+    if (!ideasLoading && !isInitialPositioned && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
       
-      if (bounds && canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const viewportCenterX = rect.width / 2;
-        const viewportCenterY = rect.height / 2;
-        
-        // Calculate offset to center the cards with padding
-        const padding = 200;
-        const offsetX = viewportCenterX / zoom - bounds.centerX;
-        const offsetY = viewportCenterY / zoom - bounds.centerY;
-        
-        setPanOffset({
-          x: offsetX,
-          y: offsetY
-        });
-      }
+      // Account for sidebar width in calculations
+      const sidebarWidth = 80;
+      const effectiveWidth = rect.width - sidebarWidth;
+      const viewportCenterX = (effectiveWidth / 2) + sidebarWidth;
+      const viewportCenterY = rect.height / 2;
       
-      setIsInitialPositioned(true);
-    } else if (!ideasLoading && !isInitialPositioned && ideas.length === 0) {
-      // No cards exist, center at origin
-      if (canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const viewportCenterX = rect.width / 2;
-        const viewportCenterY = rect.height / 2;
+      if (ideas.length > 0) {
+        // Center on existing cards
+        const bounds = calculateCardsBounds(ideas);
         
+        if (bounds) {
+          // Calculate offset to center the card group with adequate padding
+          const padding = 200;
+          
+          // Adjust if cards are spread too far apart
+          const maxSpread = Math.max(bounds.width, bounds.height);
+          const adjustedZoom = maxSpread > 1000 ? 0.8 : 1; // Zoom out if cards are very spread
+          
+          // Canvas transform: screen_coord = (canvas_coord + pan_offset) * zoom
+          // So: pan_offset = (screen_coord / zoom) - canvas_coord
+          const offsetX = (viewportCenterX / adjustedZoom) - bounds.centerX;
+          const offsetY = (viewportCenterY / adjustedZoom) - bounds.centerY;
+          
+          setPanOffset({
+            x: offsetX,
+            y: offsetY
+          });
+          
+          if (adjustedZoom !== zoom) {
+            setZoom(adjustedZoom);
+          }
+        }
+      } else {
+        // No cards exist, center canvas at origin (0,0)
         setPanOffset({
           x: viewportCenterX / zoom,
           y: viewportCenterY / zoom
         });
       }
+      
       setIsInitialPositioned(true);
     }
-  }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset]);
+  }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset, setZoom]);
 
   // Create idea mutation
   const createIdeaMutation = useMutation({
