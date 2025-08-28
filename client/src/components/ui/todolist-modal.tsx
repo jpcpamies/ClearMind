@@ -179,8 +179,13 @@ export default function TodoListModal({
   };
 
   const handleDeleteTodoList = () => {
-    if (!groupId) return;
+    console.log("HandleDeleteTodoList called with groupId:", groupId);
+    if (!groupId) {
+      console.error("No groupId provided");
+      return;
+    }
     setShowDeleteConfirm(false);
+    console.log("About to call deleteGroupMutation.mutate");
     deleteGroupMutation.mutate(groupId);
   };
 
@@ -419,7 +424,11 @@ export default function TodoListModal({
               variant="destructive" 
               size="sm"
               data-testid="button-delete-todolist"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Delete button clicked, showing confirmation dialog");
+                setShowDeleteConfirm(true);
+              }}
               disabled={deleteGroupMutation.isPending}
             >
               <Trash className="w-3 h-3 mr-1" />
