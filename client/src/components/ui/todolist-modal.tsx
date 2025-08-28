@@ -194,13 +194,8 @@ export default function TodoListModal({
   };
 
   const getColorClass = (color: string) => {
-    const colorMap = {
-      purple: "bg-purple-500",
-      blue: "bg-blue-500",
-      green: "bg-green-500",
-      orange: "bg-orange-500",
-    };
-    return colorMap[color as keyof typeof colorMap] || "bg-purple-500";
+    // Return the color as-is since it's now a flexible CSS color value
+    return color || "#8B5CF6";
   };
 
   // Group ideas by priority for default sections
@@ -215,7 +210,10 @@ export default function TodoListModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className={`w-4 h-4 rounded-full ${getColorClass(group.color)}`} />
+            <div 
+              className="w-4 h-4 rounded-full" 
+              style={{ backgroundColor: getColorClass(group.color) }}
+            />
             <DialogTitle className="text-xl">{group.name}</DialogTitle>
           </div>
         </DialogHeader>

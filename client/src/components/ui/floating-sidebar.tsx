@@ -89,19 +89,15 @@ export default function FloatingSidebar({
   };
 
   const getColorClass = (color: string) => {
-    // If it's already a hex color, return it
-    if (color.startsWith("#")) {
-      return color;
-    }
-    
-    // Otherwise, convert from color name to hex
-    const colorMap = {
-      purple: "#8B5CF6",
-      blue: "#3B82F6", 
-      green: "#10B981",
-      orange: "#F59E0B",
-    };
-    return colorMap[color as keyof typeof colorMap] || "#8B5CF6";
+    // Return the color as-is since it's now a flexible CSS color value
+    return color || "#8B5CF6";
+  };
+
+  const isValidColor = (color: string) => {
+    // Create a temporary element to test if the color is valid
+    const testElement = document.createElement("div");
+    testElement.style.color = color;
+    return testElement.style.color !== "";
   };
 
   return (

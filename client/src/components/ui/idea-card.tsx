@@ -23,12 +23,19 @@ interface IdeaCardProps {
   onDelete: () => void;
 }
 
-const colorStyles = {
-  purple: "group-purple text-white",
-  blue: "group-blue text-white", 
-  green: "group-green text-white",
-  orange: "group-orange text-white",
-  unassigned: "group-unassigned text-gray-800",
+const getCardStyle = (color: string) => {
+  if (color === 'unassigned') {
+    return {
+      backgroundColor: '#FFFFFF',
+      color: '#1A1A1A',
+      isGrouped: false,
+    };
+  }
+  return {
+    backgroundColor: color || '#8B5CF6',
+    color: '#FFFFFF',
+    isGrouped: true,
+  };
 };
 
 const priorityColors = {
@@ -53,10 +60,10 @@ export default function IdeaCard({
 }: IdeaCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const cardStyle = colorStyles[color as keyof typeof colorStyles] || colorStyles.unassigned;
+  const cardStyleData = getCardStyle(color);
   const priorityStyle = priorityColors[idea.priority as keyof typeof priorityColors] || priorityColors.medium;
 
-  const isGrouped = color !== 'unassigned';
+  const isGrouped = cardStyleData.isGrouped;
   const menuIconColor = isGrouped ? "#FFFFFF" : "#999999";
   const tagBgColor = isGrouped ? "rgba(255,255,255,0.2)" : "#F3F4F6";
   const tagTextColor = isGrouped ? "#FFFFFF" : "#555555";
@@ -66,13 +73,15 @@ export default function IdeaCard({
   return (
     <div
       data-testid={`idea-card-${idea.id}`}
-      className={`idea-card cursor-move select-none ${cardStyle}`}
+      className="idea-card cursor-move select-none"
       style={{
         width: "256px",
         padding: "16px",
         borderRadius: "12px",
         boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-        paddingLeft: "16px"
+        paddingLeft: "16px",
+        backgroundColor: cardStyleData.backgroundColor,
+        color: cardStyleData.color,
       }}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}

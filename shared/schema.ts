@@ -77,7 +77,24 @@ export const insertGroupSchema = createInsertSchema(groups).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FF0000)"),
+  color: z.string().min(1, "Color is required").refine((color) => {
+    // Check for hex colors
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) return true;
+    // Check for hex colors with 3 digits
+    if (/^#[0-9A-Fa-f]{3}$/.test(color)) return true;
+    // Check for RGB
+    if (/^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(color)) return true;
+    // Check for RGBA
+    if (/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)$/.test(color)) return true;
+    // Check for HSL
+    if (/^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/.test(color)) return true;
+    // Check for HSLA
+    if (/^hsla\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*,\s*[\d.]+\s*\)$/.test(color)) return true;
+    // Check for named colors (basic set)
+    const namedColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'cyan', 'magenta', 'lime', 'indigo', 'violet', 'brown', 'black', 'white', 'gray', 'grey', 'maroon', 'navy', 'olive', 'teal', 'silver', 'aqua', 'fuchsia', 'emerald'];
+    if (namedColors.includes(color.toLowerCase())) return true;
+    return false;
+  }, "Color must be a valid CSS color (hex, rgb, hsl, or named color)"),
 });
 
 export const insertTodoSectionSchema = createInsertSchema(todoSections).omit({
