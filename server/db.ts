@@ -1,6 +1,5 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
-import * as schema from "@shared/schema";
 
 // Use SQLite for local development if DATABASE_URL is not set
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -12,7 +11,8 @@ if (isDevelopment && !hasDatabaseUrl) {
   // Use local SQLite database for development
   const sqlite = new Database('local.db');
   sqlite.pragma('journal_mode = WAL');
-  db = drizzle(sqlite, { schema });
+  const schemaSqlite = await import('@shared/schema-sqlite');
+  db = drizzle(sqlite, { schema: schemaSqlite });
   console.log('Using local SQLite database for development');
 } else {
   // Use Neon PostgreSQL for production
@@ -24,6 +24,7 @@ if (isDevelopment && !hasDatabaseUrl) {
   
   const { Pool, neonConfig } = await import('@neondatabase/serverless');
   const ws = await import('ws');
+  const schema = await import('@shared/schema');
   neonConfig.webSocketConstructor = ws.default;
   
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });

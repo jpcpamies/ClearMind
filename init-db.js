@@ -12,7 +12,10 @@ const tables = [
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    display_name TEXT,
+    email_verified INTEGER DEFAULT 0,
+    profile_image_url TEXT,
     createdAt INTEGER DEFAULT (unixepoch() * 1000)
   )`,
   
