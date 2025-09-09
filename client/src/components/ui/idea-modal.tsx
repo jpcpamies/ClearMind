@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -75,33 +76,61 @@ export default function IdeaModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Handle ESC key for inline group creation modal and focus management
+  // Store original scroll position and prevent body scroll when modals are open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        if (scrollY) {
+          window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+        }
+      };
+    }
+  }, [isOpen]);
+
+  // Handle ESC key for nested modal (only closes top modal)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showCreateGroup) {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowCreateGroup(false);
-        resetGroupForm();
+      if (e.key === 'Escape') {
+        if (showCreateGroup) {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowCreateGroup(false);
+          resetGroupForm();
+        }
       }
     };
 
     if (showCreateGroup) {
       document.addEventListener('keydown', handleKeyDown, { capture: true });
       
-      // Set initial focus with proper timing to avoid conflicts
-      const focusTimeout = setTimeout(() => {
-        const nameInput = document.getElementById('inline-group-name');
-        if (nameInput && nameInput.offsetParent) {
-          nameInput.focus();
-          nameInput.select(); // Select any existing text
-        }
-      }, 150);
-      
       return () => {
         document.removeEventListener('keydown', handleKeyDown, { capture: true });
-        clearTimeout(focusTimeout);
       };
+    }
+  }, [showCreateGroup]);
+
+  // Focus management for nested modal
+  useEffect(() => {
+    if (showCreateGroup) {
+      // Focus the input after modal renders and is visible
+      const focusTimer = setTimeout(() => {
+        const nameInput = document.getElementById('inline-group-name');
+        if (nameInput) {
+          nameInput.focus();
+          nameInput.select();
+        }
+      }, 100);
+
+      return () => clearTimeout(focusTimer);
     }
   }, [showCreateGroup]);
 
@@ -206,13 +235,130 @@ export default function IdeaModal({
     onSubmit(submitData);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className={`max-w-md ${showCreateGroup ? 'pointer-events-none' : ''}`} 
-        data-testid="idea-modal"
-        style={{ pointerEvents: showCreateGroup ? 'none' : 'auto' }}
+  // Nested Group Creation Modal Component
+  const CreateGroupModal = () => {
+    if (!showCreateGroup) return null;
+
+    return createPortal(
+      <div 
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+        }}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowCreateGroup(false);
+            resetGroupForm();
+          }
+        }}
       >
+        <div 
+          className="bg-white rounded-lg shadow-2xl max-w-sm w-full mx-4 transform scale-100 transition-all duration-200 ease-out"
+          onMouseDown={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-group-title"
+        >
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 id="create-group-title" className="text-lg font-semibold">Create New Group</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowCreateGroup(false);
+                  resetGroupForm();
+                }}
+                className="h-6 w-6 p-0"
+                aria-label="Close modal"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="inline-group-name">Group Name *</Label>
+                <Input
+                  id="inline-group-name"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Enter group name..."
+                  disabled={createGroupMutation.isPending}
+                  maxLength={100}
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {presetColors.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`w-8 h-8 rounded-md border-2 transition-all hover:scale-105 ${
+                        selectedColor === color.value
+                          ? "border-gray-900 ring-2 ring-gray-300"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      onClick={() => setSelectedColor(color.value)}
+                      disabled={createGroupMutation.isPending}
+                      title={color.name}
+                      type="button"
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div
+                    className="w-3 h-3 rounded border"
+                    style={{ backgroundColor: selectedColor }}
+                  />
+                  <span>{selectedColor}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCreateGroup(false);
+                  resetGroupForm();
+                }}
+                className="flex-1"
+                disabled={createGroupMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateGroup}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                disabled={createGroupMutation.isPending}
+              >
+                {createGroupMutation.isPending ? "Creating..." : "Create"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent 
+          className="max-w-md"
+          data-testid="idea-modal"
+        >
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle data-testid="idea-modal-title">
@@ -361,151 +507,10 @@ export default function IdeaModal({
           </form>
         </Form>
       </DialogContent>
-      
-      {/* Inline Group Creation Modal - Portal to ensure proper stacking */}
-      {showCreateGroup && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center" 
-          style={{ 
-            zIndex: 2000, 
-            pointerEvents: 'auto',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh'
-          }} 
-          data-testid="inline-group-creation-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowCreateGroup(false);
-              resetGroupForm();
-            }
-          }}
-        >
-          <div 
-            className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 transform transition-all duration-200 ease-out" 
-            style={{ 
-              zIndex: 2001, 
-              pointerEvents: 'auto',
-              position: 'relative'
-            }}
-            data-testid="inline-group-creation-modal"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div 
-              className="p-6" 
-              style={{ pointerEvents: 'auto' }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold" data-testid="inline-group-modal-title">Create New Group</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  data-testid="button-close-inline-group-modal"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCreateGroup(false);
-                    resetGroupForm();
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  className="h-6 w-6 p-0"
-                  style={{ pointerEvents: 'auto' }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                {/* Group Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="inline-group-name">Group Name *</Label>
-                  <Input
-                    id="inline-group-name"
-                    data-testid="input-inline-group-name"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    placeholder="Enter group name..."
-                    disabled={createGroupMutation.isPending}
-                    maxLength={100}
-                    autoFocus
-                    style={{ pointerEvents: 'auto' }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                  />
-                </div>
-                
-                {/* Compact Color Picker */}
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {presetColors.map((color) => (
-                      <button
-                        key={color.value}
-                        data-testid={`inline-color-${color.name.toLowerCase()}`}
-                        className={`w-8 h-8 rounded-md border-2 transition-all hover:scale-105 ${
-                          selectedColor === color.value
-                            ? "border-gray-900 ring-2 ring-gray-300"
-                            : "border-gray-200 hover:border-gray-400"
-                        }`}
-                        style={{ backgroundColor: color.value, pointerEvents: 'auto' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedColor(color.value);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        disabled={createGroupMutation.isPending}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <div
-                      className="w-3 h-3 rounded border"
-                      style={{ backgroundColor: selectedColor }}
-                    />
-                    <span>{selectedColor}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCreateGroup(false);
-                    resetGroupForm();
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  className="flex-1"
-                  style={{ pointerEvents: 'auto' }}
-                  disabled={createGroupMutation.isPending}
-                  data-testid="button-cancel-inline-group"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreateGroup();
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  style={{ pointerEvents: 'auto' }}
-                  disabled={createGroupMutation.isPending}
-                  data-testid="button-create-inline-group"
-                >
-                  {createGroupMutation.isPending ? "Creating..." : "Create"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </Dialog>
+    
+    {/* Nested Group Creation Modal - Rendered as Portal */}
+    <CreateGroupModal />
+  </>
   );
 }
