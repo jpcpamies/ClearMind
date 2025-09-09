@@ -5,10 +5,22 @@ import type { User, AuthState, LoginRequest, RegisterRequest, AuthResponse } fro
 const TOKEN_KEY = 'clearmind_token';
 
 export function useAuth() {
+  // DEMO MODE: Skip authentication
+  const demoUser: User = {
+    id: 'demo-user',
+    email: 'demo@clearmind.app',
+    username: 'demo',
+    displayName: 'Demo User',
+    emailVerified: true,
+    profileImageUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: localStorage.getItem(TOKEN_KEY),
-    loading: true,
+    user: demoUser,  // Set demo user by default
+    token: 'demo-token',
+    loading: false,   // No loading needed for demo
     error: null,
   });
 
@@ -31,31 +43,8 @@ export function useAuth() {
   };
 
   const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      setAuthState(prev => ({ ...prev, loading: false }));
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user, token);
-      } else {
-        localStorage.removeItem(TOKEN_KEY);
-        setAuthState(prev => ({ ...prev, user: null, token: null, loading: false }));
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem(TOKEN_KEY);
-      setAuthState(prev => ({ ...prev, user: null, token: null, loading: false }));
-    }
+    // DEMO MODE: Always authenticated
+    return;
   }, []);
 
   const login = async (credentials: LoginRequest): Promise<void> => {
@@ -115,25 +104,8 @@ export function useAuth() {
   };
 
   const logout = useCallback(async () => {
-    try {
-      await apiRequest('POST', '/api/auth/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear localStorage first
-      localStorage.removeItem(TOKEN_KEY);
-      
-      // Clear the user state with explicit state update
-      setAuthState({
-        user: null,
-        token: null,
-        loading: false,
-        error: null,
-      });
-      
-      // Force a re-render of the entire app by reloading
-      window.location.reload();
-    }
+    // DEMO MODE: Logout just refreshes the page
+    window.location.reload();
   }, []);
 
   useEffect(() => {
@@ -145,7 +117,7 @@ export function useAuth() {
     token: authState.token,
     loading: authState.loading,
     error: authState.error,
-    isAuthenticated: !!authState.user,
+    isAuthenticated: true,  // DEMO MODE: Always authenticated
     login,
     register,
     logout,
