@@ -107,7 +107,7 @@ export default function IdeaModal({
     if (!isOpen) {
       setShowCreateGroupModal(false);
     }
-  }, [editingIdea, form, isOpen, pendingGroupSelection]);
+  }, [editingIdea, form, isOpen]);
 
   const handleSubmit = (data: IdeaFormData) => {
     const submitData = {
