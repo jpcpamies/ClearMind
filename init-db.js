@@ -16,16 +16,18 @@ const tables = [
     display_name TEXT,
     email_verified INTEGER DEFAULT 0,
     profile_image_url TEXT,
-    createdAt INTEGER DEFAULT (unixepoch() * 1000)
+    created_at INTEGER DEFAULT (unixepoch() * 1000),
+    updated_at INTEGER DEFAULT (unixepoch() * 1000)
   )`,
   
   `CREATE TABLE IF NOT EXISTS groups (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     color TEXT NOT NULL,
-    userId TEXT,
-    createdAt INTEGER DEFAULT (unixepoch() * 1000),
-    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    user_id TEXT,
+    created_at INTEGER DEFAULT (unixepoch() * 1000),
+    updated_at INTEGER DEFAULT (unixepoch() * 1000),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )`,
   
   `CREATE TABLE IF NOT EXISTS ideas (
@@ -34,24 +36,25 @@ const tables = [
     description TEXT,
     priority TEXT DEFAULT 'medium',
     completed INTEGER DEFAULT 0,
-    canvasX REAL DEFAULT 0,
-    canvasY REAL DEFAULT 0,
-    groupId TEXT,
-    userId TEXT,
-    createdAt INTEGER DEFAULT (unixepoch() * 1000),
-    FOREIGN KEY (groupId) REFERENCES groups(id) ON DELETE SET NULL,
-    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    canvas_x REAL DEFAULT 0,
+    canvas_y REAL DEFAULT 0,
+    group_id TEXT,
+    user_id TEXT,
+    created_at INTEGER DEFAULT (unixepoch() * 1000),
+    updated_at INTEGER DEFAULT (unixepoch() * 1000),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )`,
   
-  `CREATE TABLE IF NOT EXISTS todoSections (
+  `CREATE TABLE IF NOT EXISTS todo_sections (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    groupId TEXT NOT NULL,
+    group_id TEXT NOT NULL,
     position INTEGER DEFAULT 0,
-    userId TEXT,
-    createdAt INTEGER DEFAULT (unixepoch() * 1000),
-    FOREIGN KEY (groupId) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    user_id TEXT,
+    created_at INTEGER DEFAULT (unixepoch() * 1000),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )`
 ];
 

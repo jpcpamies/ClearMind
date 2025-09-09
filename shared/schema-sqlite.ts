@@ -12,40 +12,43 @@ export const users = sqliteTable("users", {
   displayName: text("display_name"),
   emailVerified: integer("email_verified", { mode: 'boolean' }).default(false),
   profileImageUrl: text("profile_image_url"),
-  createdAt: integer("createdAt", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
 });
 
 // Groups table (idea containers as per PRD)
 export const groups = sqliteTable("groups", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  userId: text("userId").notNull(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   color: text("color").notNull(),
-  createdAt: integer("createdAt", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
 });
 
 // Ideas table
 export const ideas = sqliteTable("ideas", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  userId: text("userId").notNull(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   priority: text("priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
-  groupId: text("groupId"),
-  canvasX: real("canvasX").default(0),
-  canvasY: real("canvasY").default(0),
+  groupId: text("group_id"),
+  canvasX: real("canvas_x").default(0),
+  canvasY: real("canvas_y").default(0),
   completed: integer("completed", { mode: 'boolean' }).default(false),
-  createdAt: integer("createdAt", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
 });
 
 // TodoList sections table
-export const todoSections = sqliteTable("todoSections", {
+export const todoSections = sqliteTable("todo_sections", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  userId: text("userId").notNull(),
-  groupId: text("groupId").notNull(),
+  userId: text("user_id").notNull(),
+  groupId: text("group_id").notNull(),
   title: text("title").notNull(),
   position: integer("position").default(0),
-  createdAt: integer("createdAt", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
+  createdAt: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch() * 1000)`),
 });
 
 // Export types
