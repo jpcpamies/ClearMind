@@ -201,7 +201,9 @@
  * Layer 8: Modal content (z-index: 1001)
  * Layer 9: Modal dropdowns/popovers (z-index: 1010-1019)
  * Layer 10: Modal tooltips (z-index: 1020-1029)
- * Layer 11: Critical system overlays (z-index: 9999)
+ * Layer 11: Nested modal overlays (z-index: 1100)
+ * Layer 12: Nested modal content (z-index: 1101)
+ * Layer 13: Critical system overlays (z-index: 9999)
  */
 
 /* Professional Card Selection and Drag States */
@@ -260,6 +262,8 @@
 .z-modal-content { z-index: 1001; }
 .z-modal-dropdown { z-index: 1010; }
 .z-modal-tooltip { z-index: 1020; }
+.z-nested-modal-overlay { z-index: 1100; }
+.z-nested-modal-content { z-index: 1101; }
 .z-critical { z-index: 9999; }
 
 /* Fix for dropdowns inside modals */

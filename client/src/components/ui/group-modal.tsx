@@ -18,6 +18,7 @@ interface GroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingGroup?: Group | null;
+  onGroupCreated?: (group: Group) => void;
 }
 
 const presetColors = [
@@ -39,6 +40,7 @@ export default function GroupModal({
   isOpen,
   onClose,
   editingGroup = null,
+  onGroupCreated,
 }: GroupModalProps) {
   const [groupName, setGroupName] = useState("");
   const [selectedColor, setSelectedColor] = useState("#8B5CF6");
@@ -77,6 +79,9 @@ export default function GroupModal({
     },
     onSuccess: (newGroup) => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      if (onGroupCreated) {
+        onGroupCreated(newGroup);
+      }
       onClose();
       resetForm();
       toast({
@@ -182,7 +187,7 @@ export default function GroupModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md z-[100]">
+      <DialogContent className="max-w-md z-[1100]" style={{ zIndex: 1100 }}>
         <DialogHeader className="pb-4 border-b border-border">
           <DialogTitle className="text-xl">
             {editingGroup ? "Edit Group" : "Create New Group"}
