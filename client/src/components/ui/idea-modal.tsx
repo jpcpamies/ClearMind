@@ -88,21 +88,19 @@ export default function IdeaModal({
 
     if (showCreateGroup) {
       document.addEventListener('keydown', handleKeyDown, { capture: true });
-      // Focus trap - prevent tabbing out of modal
-      const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-      const modal = document.querySelector('[data-testid="inline-group-creation-modal"]');
-      const firstFocusable = modal?.querySelector(focusableElements) as HTMLElement;
-      const focusableContent = modal?.querySelectorAll(focusableElements);
-      const lastFocusable = focusableContent?.[focusableContent.length - 1] as HTMLElement;
       
-      // Set initial focus
-      setTimeout(() => {
+      // Set initial focus with proper timing to avoid conflicts
+      const focusTimeout = setTimeout(() => {
         const nameInput = document.getElementById('inline-group-name');
-        if (nameInput) nameInput.focus();
-      }, 100);
+        if (nameInput && nameInput.offsetParent) {
+          nameInput.focus();
+          nameInput.select(); // Select any existing text
+        }
+      }, 150);
       
       return () => {
         document.removeEventListener('keydown', handleKeyDown, { capture: true });
+        clearTimeout(focusTimeout);
       };
     }
   }, [showCreateGroup]);
@@ -378,15 +376,10 @@ export default function IdeaModal({
             height: '100vh'
           }} 
           data-testid="inline-group-creation-overlay"
-          onClick={(e) => {
+          onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setShowCreateGroup(false);
               resetGroupForm();
-            }
-          }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              e.preventDefault();
             }
           }}
         >
@@ -398,18 +391,11 @@ export default function IdeaModal({
               position: 'relative'
             }}
             data-testid="inline-group-creation-modal"
-            onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
-            onMouseUp={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
           >
             <div 
               className="p-6" 
-              style={{ pointerEvents: 'auto' }} 
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseUp={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
+              style={{ pointerEvents: 'auto' }}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold" data-testid="inline-group-modal-title">Create New Group</h3>
@@ -444,22 +430,8 @@ export default function IdeaModal({
                     maxLength={100}
                     autoFocus
                     style={{ pointerEvents: 'auto' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onFocus={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onMouseUp={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   />
                 </div>
                 
