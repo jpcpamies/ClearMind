@@ -155,10 +155,17 @@ export default function IdeaModal({
         title: "",
         description: "",
         priority: "medium",
-        groupId: "unassigned",
+        groupId: pendingGroupSelection || "unassigned",
       });
     }
-  }, [editingIdea, form]);
+    
+    // Close group creation modal when idea modal closes
+    if (!isOpen) {
+      setShowCreateGroup(false);
+      resetGroupForm();
+      setPendingGroupSelection(null);
+    }
+  }, [editingIdea, form, isOpen, pendingGroupSelection]);
 
   const handleSubmit = (data: IdeaFormData) => {
     const submitData = {
