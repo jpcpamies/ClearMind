@@ -237,7 +237,7 @@ export default function FloatingSidebar({
                 <div
                   key={group.id}
                   data-testid={`group-item-${group.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group"
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
                   onClick={() => onTodoListOpen?.(group.id)}
                 >
                   <div className="flex items-center space-x-3">
@@ -249,7 +249,7 @@ export default function FloatingSidebar({
                     <span className="font-medium text-gray-900 text-sm">{group.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full min-w-[20px] text-center">
+                    <span className="text-xs text-gray-500 px-2 py-1 min-w-[20px] text-center">
                       {getIdeaCount(group.id)}
                     </span>
                     <DropdownMenu>
@@ -258,7 +258,7 @@ export default function FloatingSidebar({
                           variant="ghost"
                           size="sm"
                           data-testid={`button-group-menu-${group.id}`}
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <MoreHorizontal className="w-3 h-3 text-gray-400" />
