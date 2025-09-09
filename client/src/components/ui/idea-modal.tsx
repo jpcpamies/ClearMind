@@ -75,6 +75,21 @@ export default function IdeaModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Handle ESC key for inline group creation modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showCreateGroup) {
+        setShowCreateGroup(false);
+        resetGroupForm();
+      }
+    };
+
+    if (showCreateGroup) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showCreateGroup]);
+
   // Group creation mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
@@ -330,8 +345,21 @@ export default function IdeaModal({
       
       {/* Inline Group Creation Modal */}
       {showCreateGroup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" data-testid="inline-group-creation-overlay">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4" data-testid="inline-group-creation-modal">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center" 
+          style={{ zIndex: 1100 }} 
+          data-testid="inline-group-creation-overlay"
+          onClick={() => {
+            setShowCreateGroup(false);
+            resetGroupForm();
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 transform transition-all duration-200 ease-out" 
+            style={{ zIndex: 1101 }}
+            data-testid="inline-group-creation-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold" data-testid="inline-group-modal-title">Create New Group</h3>
