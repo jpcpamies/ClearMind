@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,9 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { X, Plus } from "lucide-react";
 import type { Group, Idea } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { RadioGroup, RadioGroupItem } from "./radio-group";
-import { Label } from "./label";
+import GroupModal from "./group-modal";
 
 const ideaFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -50,16 +47,7 @@ interface IdeaModalProps {
   isLoading?: boolean;
 }
 
-const presetColors = [
-  { name: "Purple", value: "#8B5CF6" },
-  { name: "Blue", value: "#3B82F6" },
-  { name: "Green", value: "#10B981" },
-  { name: "Orange", value: "#F59E0B" },
-  { name: "Pink", value: "#EC4899" },
-  { name: "Red", value: "#EF4444" },
-  { name: "Teal", value: "#14B8A6" },
-  { name: "Indigo", value: "#6366F1" }
-];
+
 
 export default function IdeaModal({
   isOpen,
@@ -69,126 +57,23 @@ export default function IdeaModal({
   editingIdea,
   isLoading = false,
 }: IdeaModalProps) {
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [groupName, setGroupName] = useState("");
-  const [selectedColor, setSelectedColor] = useState("#8B5CF6");
-  const [pendingGroupSelection, setPendingGroupSelection] = useState<string | null>(null);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Store original scroll position and prevent body scroll when modals are open
-  useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      
-      return () => {
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        if (scrollY) {
-          window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
-        }
-      };
-    }
-  }, [isOpen]);
 
-  // Handle ESC key for nested modal (only closes top modal)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showCreateGroup) {
-          e.preventDefault();
-          e.stopPropagation();
-          setShowCreateGroup(false);
-          resetGroupForm();
-        }
-      }
-    };
 
-    if (showCreateGroup) {
-      document.addEventListener('keydown', handleKeyDown, { capture: true });
-      
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown, { capture: true });
-      };
-    }
-  }, [showCreateGroup]);
 
-  // Focus management for nested modal
-  useEffect(() => {
-    if (showCreateGroup) {
-      // Focus the input after modal renders and is visible
-      const focusTimer = setTimeout(() => {
-        const nameInput = document.getElementById('inline-group-name');
-        if (nameInput) {
-          nameInput.focus();
-          nameInput.select();
-        }
-      }, 100);
 
-      return () => clearTimeout(focusTimer);
-    }
-  }, [showCreateGroup]);
 
-  // Group creation mutation
-  const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; color: string }) => {
-      const response = await apiRequest("POST", "/api/groups", data);
-      return response.json();
-    },
-    onSuccess: (newGroup) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      // Auto-select the newly created group
-      form.setValue("groupId", newGroup.id);
-      setPendingGroupSelection(newGroup.id);
-      setShowCreateGroup(false);
-      resetGroupForm();
-      toast({
-        title: "Success",
-        description: `Group '${newGroup.name}' created successfully`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create group. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const resetGroupForm = () => {
-    setGroupName("");
-    setSelectedColor("#8B5CF6");
+  const handleGroupModalClose = () => {
+    setShowCreateGroupModal(false);
   };
 
-  const handleCreateGroup = () => {
-    if (!groupName.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Group name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (groupName.trim().length < 2) {
-      toast({
-        title: "Validation Error",
-        description: "Group name must be at least 2 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createGroupMutation.mutate({
-      name: groupName.trim(),
-      color: selectedColor,
-    });
+  const handleGroupCreated = (newGroup: Group) => {
+    // Auto-select the newly created group
+    form.setValue("groupId", newGroup.id);
+    setShowCreateGroupModal(false);
   };
 
   const form = useForm<IdeaFormData>({
@@ -214,15 +99,13 @@ export default function IdeaModal({
         title: "",
         description: "",
         priority: "medium",
-        groupId: pendingGroupSelection || "unassigned",
+        groupId: "unassigned",
       });
     }
     
-    // Close group creation modal when idea modal closes
+    // Close group modal when idea modal closes
     if (!isOpen) {
-      setShowCreateGroup(false);
-      resetGroupForm();
-      setPendingGroupSelection(null);
+      setShowCreateGroupModal(false);
     }
   }, [editingIdea, form, isOpen, pendingGroupSelection]);
 
@@ -235,122 +118,7 @@ export default function IdeaModal({
     onSubmit(submitData);
   };
 
-  // Nested Group Creation Modal Component
-  const CreateGroupModal = () => {
-    if (!showCreateGroup) return null;
 
-    return createPortal(
-      <div 
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-        }}
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) {
-            setShowCreateGroup(false);
-            resetGroupForm();
-          }
-        }}
-      >
-        <div 
-          className="bg-white rounded-lg shadow-2xl max-w-sm w-full mx-4 transform scale-100 transition-all duration-200 ease-out"
-          onMouseDown={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-group-title"
-        >
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 id="create-group-title" className="text-lg font-semibold">Create New Group</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowCreateGroup(false);
-                  resetGroupForm();
-                }}
-                className="h-6 w-6 p-0"
-                aria-label="Close modal"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="inline-group-name">Group Name *</Label>
-                <Input
-                  id="inline-group-name"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Enter group name..."
-                  disabled={createGroupMutation.isPending}
-                  maxLength={100}
-                  autoComplete="off"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Color</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {presetColors.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`w-8 h-8 rounded-md border-2 transition-all hover:scale-105 ${
-                        selectedColor === color.value
-                          ? "border-gray-900 ring-2 ring-gray-300"
-                          : "border-gray-200 hover:border-gray-400"
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      onClick={() => setSelectedColor(color.value)}
-                      disabled={createGroupMutation.isPending}
-                      title={color.name}
-                      type="button"
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div
-                    className="w-3 h-3 rounded border"
-                    style={{ backgroundColor: selectedColor }}
-                  />
-                  <span>{selectedColor}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCreateGroup(false);
-                  resetGroupForm();
-                }}
-                className="flex-1"
-                disabled={createGroupMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleCreateGroup}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                disabled={createGroupMutation.isPending}
-              >
-                {createGroupMutation.isPending ? "Creating..." : "Create"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
 
   return (
     <>
@@ -447,7 +215,11 @@ export default function IdeaModal({
                           type="button"
                           data-testid="button-create-new-group"
                           className="flex items-center space-x-2 w-full px-2 py-1.5 text-sm text-left hover:bg-gray-100 rounded-sm transition-colors"
-                          onClick={() => setShowCreateGroup(true)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowCreateGroupModal(true);
+                          }}
                         >
                           <Plus className="w-4 h-4 text-blue-600" />
                           <span className="text-blue-600 font-medium">Create New Group</span>
@@ -509,8 +281,13 @@ export default function IdeaModal({
       </DialogContent>
     </Dialog>
     
-    {/* Nested Group Creation Modal - Rendered as Portal */}
-    <CreateGroupModal />
+    {/* Reuse the existing GroupModal component */}
+    <GroupModal 
+      isOpen={showCreateGroupModal}
+      onClose={handleGroupModalClose}
+      editingGroup={null}
+      onGroupCreated={handleGroupCreated}
+    />
   </>
   );
 }
