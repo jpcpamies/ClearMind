@@ -10,12 +10,12 @@ interface ZoomControlsProps {
 export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomControlsProps) {
   const handleZoomIn = () => {
     console.log('🔍 Zoom in clicked');
-    onZoomChange(Math.min(zoom * 1.2, 3));
+    onZoomChange(Math.min(zoom * 1.2, 4)); // Max 400%
   };
 
   const handleZoomOut = () => {
     console.log('🔍 Zoom out clicked');
-    onZoomChange(Math.max(zoom * 0.8, 0.3));
+    onZoomChange(Math.max(zoom * 0.8, 0.25)); // Min 25%
   };
   
   const handleResetClick = (e: React.MouseEvent) => {

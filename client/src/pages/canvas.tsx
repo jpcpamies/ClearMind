@@ -26,7 +26,7 @@ export default function Canvas() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { canvasRef, zoom, setZoom, panOffset, setPanOffset } = useCanvas();
+  const { canvasRef, zoom, setZoom, panOffset, setPanOffset, handleWheel } = useCanvas();
 
   // Fetch ideas and groups
   const { data: ideas = [], isLoading: ideasLoading } = useQuery<Idea[]>({
@@ -482,6 +482,7 @@ export default function Canvas() {
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}
               onPanChange={setPanOffset}
+              onWheel={handleWheel}
             />
           </div>
 

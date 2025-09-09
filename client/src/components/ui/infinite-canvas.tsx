@@ -19,10 +19,11 @@ interface InfiniteCanvasProps {
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
   onPanChange?: (offset: { x: number; y: number }) => void;
+  onWheel?: (e: WheelEvent) => void;
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onPanChange }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onPanChange, onWheel }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -82,16 +83,15 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
 
     useEffect(() => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas || !onWheel) return;
 
       const handleWheel = (e: WheelEvent) => {
-        e.preventDefault();
-        // Zoom functionality would be handled by parent component
+        onWheel(e);
       };
 
       canvas.addEventListener("wheel", handleWheel, { passive: false });
       return () => canvas.removeEventListener("wheel", handleWheel);
-    }, []);
+    }, [onWheel]);
 
     const getGroupColor = (groupId: string | null) => {
       if (!groupId) return "unassigned";
