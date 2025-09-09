@@ -368,7 +368,15 @@ export default function IdeaModal({
       {showCreateGroup && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center" 
-          style={{ zIndex: 1100, pointerEvents: 'auto' }} 
+          style={{ 
+            zIndex: 2000, 
+            pointerEvents: 'auto',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh'
+          }} 
           data-testid="inline-group-creation-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -376,16 +384,33 @@ export default function IdeaModal({
               resetGroupForm();
             }
           }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+            }
+          }}
         >
           <div 
             className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 transform transition-all duration-200 ease-out" 
-            style={{ zIndex: 1101, pointerEvents: 'auto' }}
+            style={{ 
+              zIndex: 2001, 
+              pointerEvents: 'auto',
+              position: 'relative'
+            }}
             data-testid="inline-group-creation-modal"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onMouseUp={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            <div className="p-6" style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div 
+              className="p-6" 
+              style={{ pointerEvents: 'auto' }} 
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold" data-testid="inline-group-modal-title">Create New Group</h3>
                 <Button
@@ -419,8 +444,22 @@ export default function IdeaModal({
                     maxLength={100}
                     autoFocus
                     style={{ pointerEvents: 'auto' }}
-                    onClick={(e) => e.stopPropagation()}
-                    onFocus={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onMouseUp={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                    }}
                   />
                 </div>
                 
