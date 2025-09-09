@@ -46,7 +46,7 @@ export default function ZoomControls({ zoom, onZoomChange, onResetView }: ZoomCo
         </Button>
         
         {/* Zoom Percentage Display */}
-        <div className="px-3 py-1 text-xs font-medium text-center min-w-[48px] rounded-lg bg-white border border-gray-200 text-black">
+        <div className="px-3 py-1 text-xs font-medium text-center min-w-[48px] rounded-lg bg-white border border-gray-200 text-black transition-all duration-200">
           {Math.round(zoom * 100)}%
         </div>
         

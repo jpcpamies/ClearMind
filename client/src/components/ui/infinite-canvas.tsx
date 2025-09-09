@@ -20,10 +20,13 @@ interface InfiniteCanvasProps {
   onBulkGroupChange: (groupId: string) => void;
   onPanChange?: (offset: { x: number; y: number }) => void;
   onWheel?: (e: WheelEvent) => void;
+  onTouchStart?: (e: TouchEvent) => void;
+  onTouchMove?: (e: TouchEvent) => void;
+  onTouchEnd?: (e: TouchEvent) => void;
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onPanChange, onWheel }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -83,15 +86,36 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
 
     useEffect(() => {
       const canvas = canvasRef.current;
-      if (!canvas || !onWheel) return;
+      if (!canvas) return;
 
       const handleWheel = (e: WheelEvent) => {
-        onWheel(e);
+        if (onWheel) onWheel(e);
+      };
+
+      const handleTouchStart = (e: TouchEvent) => {
+        if (onTouchStart) onTouchStart(e);
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        if (onTouchMove) onTouchMove(e);
+      };
+
+      const handleTouchEnd = (e: TouchEvent) => {
+        if (onTouchEnd) onTouchEnd(e);
       };
 
       canvas.addEventListener("wheel", handleWheel, { passive: false });
-      return () => canvas.removeEventListener("wheel", handleWheel);
-    }, [onWheel]);
+      canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+      canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+      canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+      
+      return () => {
+        canvas.removeEventListener("wheel", handleWheel);
+        canvas.removeEventListener("touchstart", handleTouchStart);
+        canvas.removeEventListener("touchmove", handleTouchMove);
+        canvas.removeEventListener("touchend", handleTouchEnd);
+      };
+    }, [onWheel, onTouchStart, onTouchMove, onTouchEnd]);
 
     const getGroupColor = (groupId: string | null) => {
       if (!groupId) return "unassigned";
@@ -126,6 +150,9 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         ref={canvasRef}
         data-testid="infinite-canvas"
         className={`relative w-full h-full overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+        style={{
+          transition: 'transform 0.1s ease-out'
+        }}
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
