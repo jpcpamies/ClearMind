@@ -75,18 +75,35 @@ export default function IdeaModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Handle ESC key for inline group creation modal
+  // Handle ESC key for inline group creation modal and focus management
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showCreateGroup) {
+        e.preventDefault();
+        e.stopPropagation();
         setShowCreateGroup(false);
         resetGroupForm();
       }
     };
 
     if (showCreateGroup) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, { capture: true });
+      // Focus trap - prevent tabbing out of modal
+      const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      const modal = document.querySelector('[data-testid="inline-group-creation-modal"]');
+      const firstFocusable = modal?.querySelector(focusableElements) as HTMLElement;
+      const focusableContent = modal?.querySelectorAll(focusableElements);
+      const lastFocusable = focusableContent?.[focusableContent.length - 1] as HTMLElement;
+      
+      // Set initial focus
+      setTimeout(() => {
+        const nameInput = document.getElementById('inline-group-name');
+        if (nameInput) nameInput.focus();
+      }, 100);
+      
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      };
     }
   }, [showCreateGroup]);
 
@@ -193,7 +210,11 @@ export default function IdeaModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" data-testid="idea-modal">
+      <DialogContent 
+        className={`max-w-md ${showCreateGroup ? 'pointer-events-none' : ''}`} 
+        data-testid="idea-modal"
+        style={{ pointerEvents: showCreateGroup ? 'none' : 'auto' }}
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle data-testid="idea-modal-title">
@@ -343,35 +364,42 @@ export default function IdeaModal({
         </Form>
       </DialogContent>
       
-      {/* Inline Group Creation Modal */}
+      {/* Inline Group Creation Modal - Portal to ensure proper stacking */}
       {showCreateGroup && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center" 
-          style={{ zIndex: 1100 }} 
+          style={{ zIndex: 1100, pointerEvents: 'auto' }} 
           data-testid="inline-group-creation-overlay"
-          onClick={() => {
-            setShowCreateGroup(false);
-            resetGroupForm();
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateGroup(false);
+              resetGroupForm();
+            }
           }}
         >
           <div 
             className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 transform transition-all duration-200 ease-out" 
-            style={{ zIndex: 1101 }}
+            style={{ zIndex: 1101, pointerEvents: 'auto' }}
             data-testid="inline-group-creation-modal"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
+            <div className="p-6" style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold" data-testid="inline-group-modal-title">Create New Group</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   data-testid="button-close-inline-group-modal"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowCreateGroup(false);
                     resetGroupForm();
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className="h-6 w-6 p-0"
+                  style={{ pointerEvents: 'auto' }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -389,6 +417,10 @@ export default function IdeaModal({
                     placeholder="Enter group name..."
                     disabled={createGroupMutation.isPending}
                     maxLength={100}
+                    autoFocus
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => e.stopPropagation()}
+                    onFocus={(e) => e.stopPropagation()}
                   />
                 </div>
                 
@@ -405,8 +437,12 @@ export default function IdeaModal({
                             ? "border-gray-900 ring-2 ring-gray-300"
                             : "border-gray-200 hover:border-gray-400"
                         }`}
-                        style={{ backgroundColor: color.value }}
-                        onClick={() => setSelectedColor(color.value)}
+                        style={{ backgroundColor: color.value, pointerEvents: 'auto' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedColor(color.value);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
                         disabled={createGroupMutation.isPending}
                         title={color.name}
                       />
@@ -427,11 +463,14 @@ export default function IdeaModal({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowCreateGroup(false);
                     resetGroupForm();
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className="flex-1"
+                  style={{ pointerEvents: 'auto' }}
                   disabled={createGroupMutation.isPending}
                   data-testid="button-cancel-inline-group"
                 >
@@ -439,8 +478,13 @@ export default function IdeaModal({
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleCreateGroup}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateGroup();
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  style={{ pointerEvents: 'auto' }}
                   disabled={createGroupMutation.isPending}
                   data-testid="button-create-inline-group"
                 >
