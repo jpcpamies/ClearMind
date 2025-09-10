@@ -189,7 +189,7 @@ export default function IdeaCard({
       data-testid={`idea-card-${idea.id}`}
       className={`idea-card select-none transition-all duration-300 ease-out ${
         isExpanded ? 'cursor-pointer' : 'cursor-move'
-      }`}
+      } ${isSelected ? 'card-selected' : ''}`}
       style={{
         width: isExpanded ? "400px" : "256px",
         padding: "16px",
