@@ -10,7 +10,8 @@ import {
 } from "./dropdown-menu";
 import type { Idea, Group } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
 
 interface IdeaCardProps {
   idea: Idea;
