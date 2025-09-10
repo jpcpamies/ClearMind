@@ -271,13 +271,18 @@ export default function IdeaCard({
         <DropdownMenu open={isGroupDropdownOpen} onOpenChange={setIsGroupDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <span 
-              className="group-label rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+              className="group-label rounded-full cursor-pointer hover:opacity-80 transition-opacity flex-shrink"
               style={{
                 fontSize: "12px",
                 padding: "2px 8px",
                 backgroundColor: tagBgColor,
                 color: tagTextColor,
                 borderRadius: "20px",
+                maxWidth: "120px",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                display: "inline-block",
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -285,14 +290,24 @@ export default function IdeaCard({
                 setIsGroupDropdownOpen(true);
               }}
               data-testid={`group-label-${idea.id}`}
+              title={group ? group.name : "Unassigned"} // Tooltip for full text
             >
               {group ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" style={{ minWidth: 0 }}>
                   <div 
-                    className="w-2 h-2 rounded-full" 
+                    className="w-2 h-2 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: group.color }}
                   />
-                  {group.name}
+                  <span 
+                    style={{
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      minWidth: 0,
+                    }}
+                  >
+                    {group.name}
+                  </span>
                 </div>
               ) : (
                 "Unassigned"
