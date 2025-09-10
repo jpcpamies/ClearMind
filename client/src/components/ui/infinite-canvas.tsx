@@ -379,40 +379,62 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                   data-testid="button-bulk-actions"
                   variant="secondary"
                   size="icon"
-                  className="h-12 w-12 rounded-full shadow-lg bg-background/95 backdrop-blur-sm border hover:bg-accent"
+                  className="h-12 w-12 rounded-full shadow-lg border hover:bg-white/95"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(8px)',
+                  }}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
+              <DropdownMenuContent align="center" className="w-56 shadow-lg">
                 <DropdownMenuItem
                   data-testid="button-bulk-delete"
                   onClick={onBulkDelete}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {selectedIdeaIds.size} ideas
+                  Delete {selectedIdeaIds.size} selected
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  data-testid="button-bulk-create-group"
-                  onClick={onNewGroup}
-                  className="text-primary focus:text-primary"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create New Group
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {groups.map((group) => (
-                  <DropdownMenuItem
-                    key={group.id}
-                    data-testid={`button-bulk-move-to-${group.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    onClick={() => onBulkGroupChange(group.id)}
-                  >
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    Move to {group.name}
-                  </DropdownMenuItem>
-                ))}
+                
+                {/* Nested dropdown for Move to Group */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent" data-testid="button-bulk-move-to-group">
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      Move to Group
+                      <svg className="ml-auto h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="w-48 shadow-lg">
+                    {groups.map((group) => (
+                      <DropdownMenuItem
+                        key={group.id}
+                        data-testid={`button-bulk-move-to-${group.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        onClick={() => onBulkGroupChange(group.id)}
+                      >
+                        <div 
+                          className="mr-2 h-3 w-3 rounded-full border border-gray-300"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        {group.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      data-testid="button-bulk-create-group"
+                      onClick={onNewGroup}
+                      className="text-primary focus:text-primary"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create New Group
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
