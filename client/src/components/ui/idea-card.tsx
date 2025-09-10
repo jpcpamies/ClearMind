@@ -86,10 +86,7 @@ export default function IdeaCard({
   // Handle group change
   const handleGroupChange = async (groupId: string) => {
     try {
-      await apiRequest(`/api/ideas/${idea.id}`, {
-        method: 'PUT',
-        body: { groupId: groupId === 'unassigned' ? null : groupId }
-      });
+      await apiRequest('PUT', `/api/ideas/${idea.id}`, { groupId: groupId === 'unassigned' ? null : groupId });
       
       // Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: ['/api/ideas'] });
@@ -102,10 +99,7 @@ export default function IdeaCard({
   // Handle priority change
   const handlePriorityChange = async (priority: string) => {
     try {
-      await apiRequest(`/api/ideas/${idea.id}`, {
-        method: 'PUT',
-        body: { priority }
-      });
+      await apiRequest('PUT', `/api/ideas/${idea.id}`, { priority });
       
       // Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: ['/api/ideas'] });
@@ -320,7 +314,7 @@ export default function IdeaCard({
                 Unassigned
               </div>
             </DropdownMenuItem>
-            {groups.map((groupOption) => (
+            {groups?.map((groupOption) => (
               <DropdownMenuItem
                 key={groupOption.id}
                 onClick={() => handleGroupChange(groupOption.id)}

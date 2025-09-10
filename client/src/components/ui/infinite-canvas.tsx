@@ -210,6 +210,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
               <IdeaCard
                 idea={idea}
                 group={groups.find(g => g.id === idea.groupId)}
+                groups={groups}
                 color={getGroupColor(idea.groupId)}
                 position={{ x: 0, y: 0 }} // Position is handled by the wrapper div
                 isDragging={isDragging && draggedItem?.id === idea.id}
@@ -241,6 +242,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 onUpdate={(updates) => onIdeaUpdate(idea.id, updates)}
                 onDelete={() => onIdeaDelete(idea.id)}
                 onExpand={() => handleCardExpand(idea.id)}
+                onCreateGroup={() => {}} // TODO: Implement group creation
               />
             </div>
           );
