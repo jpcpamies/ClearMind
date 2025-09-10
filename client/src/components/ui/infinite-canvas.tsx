@@ -30,6 +30,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+    const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
     
     // Sync the internal ref with the forwarded ref
     useEffect(() => {
@@ -53,10 +54,20 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       panOffset,
     });
 
+    // Handle card expansion
+    const handleCardExpand = useCallback((ideaId: string) => {
+      setExpandedCardId(current => current === ideaId ? null : ideaId);
+    }, []);
+
     // Canvas panning handlers
     const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
       // Handle selection clearing first
       handleCanvasClick(e);
+      
+      // Contract expanded card if clicking outside of it
+      if (expandedCardId && e.target === canvasRef.current) {
+        setExpandedCardId(null);
+      }
       
       // Only start panning if clicking on empty canvas (not on cards)
       if (e.target === canvasRef.current && e.button === 0) {
@@ -64,7 +75,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         setLastPanPoint({ x: e.clientX, y: e.clientY });
         e.preventDefault();
       }
-    }, [handleCanvasClick]);
+    }, [handleCanvasClick, expandedCardId]);
 
     const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
       if (isPanning && onPanChange) {
@@ -189,6 +200,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 top: screenY,
                 transform: `scale(${zoom})`,
                 transformOrigin: '0 0',
+                zIndex: expandedCardId === idea.id ? 999 : 'auto',
               }}
             >
               <IdeaCard
@@ -197,8 +209,14 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 color={getGroupColor(idea.groupId)}
                 position={{ x: 0, y: 0 }} // Position is handled by the wrapper div
                 isDragging={isDragging && draggedItem?.id === idea.id}
+                isExpanded={expandedCardId === idea.id}
                 onMouseDown={(e) => {
                   e.stopPropagation(); // Prevent canvas panning when dragging cards
+                  
+                  // Don't handle dragging if card is expanded
+                  if (expandedCardId === idea.id) {
+                    return;
+                  }
                   
                   // Handle Cmd+Click for multi-selection
                   if (e.metaKey || e.ctrlKey) {
@@ -218,6 +236,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 onEdit={() => onIdeaEdit(idea.id)}
                 onUpdate={(updates) => onIdeaUpdate(idea.id, updates)}
                 onDelete={() => onIdeaDelete(idea.id)}
+                onExpand={() => handleCardExpand(idea.id)}
               />
             </div>
           );

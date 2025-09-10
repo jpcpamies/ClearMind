@@ -16,11 +16,13 @@ interface IdeaCardProps {
   position: { x: number; y: number };
   isDragging: boolean;
   isSelected: boolean;
+  isExpanded?: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
   onTouchStart: (e: React.TouchEvent) => void;
   onEdit: () => void;
   onUpdate: (updates: Partial<Idea>) => void;
   onDelete: () => void;
+  onExpand?: () => void;
 }
 
 const getCardStyle = (color: string) => {
@@ -52,13 +54,32 @@ export default function IdeaCard({
   position,
   isDragging,
   isSelected,
+  isExpanded = false,
   onMouseDown,
   onTouchStart,
   onEdit,
   onUpdate,
   onDelete,
+  onExpand,
 }: IdeaCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Handle card expansion - avoid menu dots, group label, and priority label
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't expand if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    const isInteractiveElement = 
+      target.closest('[data-testid^="button-idea-menu"]') || // Menu dots
+      target.closest('.group-label') || // Group label
+      target.closest('.priority-label') || // Priority label
+      target.closest('button') || // Any button
+      target.closest('[role="menuitem"]'); // Menu items
+    
+    if (!isInteractiveElement && onExpand) {
+      e.stopPropagation();
+      onExpand();
+    }
+  };
 
   const cardStyleData = getCardStyle(color);
   const priorityStyle = priorityColors[idea.priority as keyof typeof priorityColors] || priorityColors.medium;
@@ -73,18 +94,28 @@ export default function IdeaCard({
   return (
     <div
       data-testid={`idea-card-${idea.id}`}
-      className="idea-card cursor-move select-none"
+      className={`idea-card select-none transition-all duration-300 ease-out ${
+        isExpanded ? 'cursor-pointer' : 'cursor-move'
+      }`}
       style={{
-        width: "256px",
+        width: isExpanded ? "400px" : "256px",
         padding: "16px",
         borderRadius: "12px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+        boxShadow: isExpanded 
+          ? "0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.1)" 
+          : "0 2px 6px rgba(0,0,0,0.08)",
         paddingLeft: "16px",
         backgroundColor: cardStyleData.backgroundColor,
         color: cardStyleData.color,
+        transform: isExpanded ? 'scale(1.05)' : 'scale(1)',
+        zIndex: isExpanded ? 1000 : 'auto',
+        position: 'relative',
+        maxHeight: isExpanded ? 'none' : '180px',
+        overflow: isExpanded ? 'visible' : 'hidden',
       }}
-      onMouseDown={onMouseDown}
-      onTouchStart={onTouchStart}
+      onMouseDown={isExpanded ? undefined : onMouseDown}
+      onTouchStart={isExpanded ? undefined : onTouchStart}
+      onClick={handleCardClick}
     >
       <div className="flex justify-between items-start mb-2">
         <h4 
@@ -137,11 +168,14 @@ export default function IdeaCard({
 
       {idea.description && (
         <p 
-          className="mb-3 line-clamp-2"
+          className={`mb-3 ${isExpanded ? '' : 'line-clamp-2'}`}
           style={{
             fontSize: "12px",
             fontWeight: "400",
             color: descriptionColor,
+            lineHeight: "1.4",
+            maxHeight: isExpanded ? 'none' : '32px',
+            overflow: isExpanded ? 'visible' : 'hidden',
           }}
         >
           {idea.description}
@@ -150,7 +184,7 @@ export default function IdeaCard({
 
       <div className="flex justify-between items-center">
         <span 
-          className="rounded-full"
+          className="group-label rounded-full cursor-pointer"
           style={{
             fontSize: "12px",
             padding: "2px 8px",
@@ -158,11 +192,12 @@ export default function IdeaCard({
             color: tagTextColor,
             borderRadius: "20px",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {group ? group.name : "Unassigned"}
         </span>
         <span 
-          className="rounded-full"
+          className="priority-label rounded-full cursor-pointer"
           style={{
             fontSize: "12px", 
             padding: "2px 8px",
@@ -170,6 +205,7 @@ export default function IdeaCard({
             color: tagTextColor,
             borderRadius: "20px",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
         </span>
