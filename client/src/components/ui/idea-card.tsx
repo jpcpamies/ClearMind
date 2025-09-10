@@ -118,11 +118,8 @@ export default function IdeaCard({
 
   // Handle new group creation
   const handleCreateNewGroup = () => {
-    const groupName = prompt('Enter group name:');
-    if (groupName && groupName.trim() && onCreateGroup) {
-      onCreateGroup(groupName.trim());
-      setIsGroupDropdownOpen(false);
-    }
+    setIsGroupDropdownOpen(false);
+    setIsCreateGroupModalOpen(true);
   };
 
   // Close all dropdowns when opening another
@@ -130,6 +127,11 @@ export default function IdeaCard({
     setIsGroupDropdownOpen(false);
     setIsPriorityDropdownOpen(false);
     setIsMenuOpen(false);
+  };
+
+  // Handle modal close
+  const handleCreateGroupModalClose = () => {
+    setIsCreateGroupModalOpen(false);
   };
 
   // Handle mouse down to track potential dragging
