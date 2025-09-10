@@ -71,8 +71,8 @@ export default function Canvas() {
     
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // Account for sidebar occupied space (320px width + 12px left margin = 332px when expanded, 0 when collapsed)
-    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 332;
+    // Account for sidebar occupied space (matches canvas positioning: 344px when expanded, 0 when collapsed)
+    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
     const effectiveWidth = rect.width - sidebarOccupiedSpace;
     
     // Calculate the actual center of visible canvas area
@@ -100,8 +100,8 @@ export default function Canvas() {
     if (!ideasLoading && !isInitialPositioned && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       
-      // Account for sidebar occupied space (320px width + 12px left margin = 332px)
-      const sidebarOccupiedSpace = 332;
+      // Account for sidebar occupied space (matches canvas positioning: 344px)
+      const sidebarOccupiedSpace = 344;
       const effectiveWidth = rect.width - sidebarOccupiedSpace;
       const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
       const viewportCenterY = rect.height / 2;
@@ -418,8 +418,8 @@ export default function Canvas() {
               if (ideas.length > 0) {
                 const bounds = calculateCardsBounds(ideas);
                 if (bounds) {
-                                // Calculate proper viewport center accounting for sidebar state
-                  const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 332;
+                                // Calculate proper viewport center accounting for sidebar state (matches canvas positioning)
+                  const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
                   const canvasRect = canvasRef.current?.getBoundingClientRect();
                   if (canvasRect) {
                     const effectiveWidth = canvasRect.width - sidebarOccupiedSpace;
@@ -547,8 +547,8 @@ export default function Canvas() {
     const rect = canvasRef.current.getBoundingClientRect();
     console.log('📐 Canvas dimensions:', rect);
     
-    // Calculate sidebar occupied space based on collapse state
-    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 332;
+    // Calculate sidebar occupied space based on collapse state (matches canvas positioning)
+    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
     
     const effectiveWidth = rect.width - sidebarOccupiedSpace;
     const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
