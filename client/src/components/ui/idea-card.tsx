@@ -11,7 +11,7 @@ import {
 import type { Idea, Group } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
+import GroupModal from "@/components/ui/group-modal";
 
 interface IdeaCardProps {
   idea: Idea;
@@ -78,11 +78,6 @@ export default function IdeaCard({
   const [wasDragged, setWasDragged] = useState(false);
   const queryClient = useQueryClient();
 
-  // Get ideas data for the modal
-  const { data: ideas = [] } = useQuery<Idea[]>({
-    queryKey: ['/api/ideas'],
-  });
-
   const priorities = [
     { value: 'low', label: 'Low' },
     { value: 'medium', label: 'Medium' },
@@ -129,32 +124,15 @@ export default function IdeaCard({
     setIsMenuOpen(false);
   };
 
-  // Handle modal close and check if new group was created
-  const handleCreateGroupModalClose = async () => {
+  // Handle modal close
+  const handleCreateGroupModalClose = () => {
     setIsCreateGroupModalOpen(false);
-    
-    // After the modal closes, check if there are any new groups and assign this card to the newest one
-    // This is a simple way to detect if a new group was just created
-    // We'll refetch groups and if there's a new one, assign it to this card
-    setTimeout(async () => {
-      try {
-        // Fetch the latest groups
-        const response = await fetch('/api/groups');
-        const latestGroups = await response.json();
-        
-        // Find the newest group (the one that's not in our current groups list)
-        const newGroup = latestGroups.find((g: Group) => 
-          !groups.some(existingGroup => existingGroup.id === g.id)
-        );
-        
-        if (newGroup) {
-          // Update this card to use the new group
-          await handleGroupChange(newGroup.id);
-        }
-      } catch (error) {
-        console.error('Failed to check for new group:', error);
-      }
-    }, 100); // Small delay to ensure modal mutations have completed
+  };
+
+  // Handle new group creation
+  const handleGroupCreated = async (newGroup: Group) => {
+    // Automatically assign this card to the newly created group
+    await handleGroupChange(newGroup.id);
   };
 
   // Handle mouse down to track potential dragging
@@ -438,11 +416,10 @@ export default function IdeaCard({
       </div>
 
       {/* Create Group Modal */}
-      <CreateTodoListModal
+      <GroupModal
         isOpen={isCreateGroupModalOpen}
         onClose={handleCreateGroupModalClose}
-        groups={groups}
-        ideas={ideas}
+        onGroupCreated={handleGroupCreated}
       />
     </div>
   );
