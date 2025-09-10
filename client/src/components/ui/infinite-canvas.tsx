@@ -115,7 +115,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         height: rectBottom - rectTop
       });
       
-      const intersectingCards = [];
+      const intersectingCards: typeof ideas = [];
       
       ideas.forEach(idea => {
         // Calculate card position in screen coordinates
@@ -176,6 +176,17 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         const isModifier = e.ctrlKey || e.metaKey;
         
         if (isModifier) {
+          // Convert screen coordinates to canvas-relative coordinates
+          const canvasRect = canvasRef.current.getBoundingClientRect();
+          const canvasRelativeX = e.clientX - canvasRect.left;
+          const canvasRelativeY = e.clientY - canvasRect.top;
+          
+          console.log('🎯 Starting rectangle selection:', {
+            screenCoords: { x: e.clientX, y: e.clientY },
+            canvasRect: canvasRect,
+            canvasRelativeCoords: { x: canvasRelativeX, y: canvasRelativeY }
+          });
+          
           // Start rectangle selection when modifier is pressed
           setIsSelecting(true);
           setSelectionStart({ x: e.clientX, y: e.clientY });
