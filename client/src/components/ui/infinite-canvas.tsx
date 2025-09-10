@@ -31,6 +31,10 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
     const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+    const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+    const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
+    const [isModifierPressed, setIsModifierPressed] = useState(false);
     
     // Sync the internal ref with the forwarded ref
     useEffect(() => {
@@ -40,6 +44,35 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         ref.current = canvasRef.current;
       }
     }, [ref]);
+
+    // Keyboard modifier detection
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.metaKey || e.ctrlKey) {
+          setIsModifierPressed(true);
+        }
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (!e.metaKey && !e.ctrlKey) {
+          setIsModifierPressed(false);
+        }
+      };
+
+      const handleWindowBlur = () => {
+        setIsModifierPressed(false);
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      window.addEventListener('blur', handleWindowBlur);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        window.removeEventListener('blur', handleWindowBlur);
+      };
+    }, []);
     
     const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick, wasDragged } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
@@ -63,6 +96,24 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       setExpandedCardId(current => current === ideaId ? null : ideaId);
     }, []);
 
+    // Rectangle intersection detection
+    const getCardsInRectangle = useCallback((startX: number, startY: number, endX: number, endY: number) => {
+      const rectLeft = Math.min(startX, endX);
+      const rectRight = Math.max(startX, endX);
+      const rectTop = Math.min(startY, endY);
+      const rectBottom = Math.max(startY, endY);
+      
+      return ideas.filter(idea => {
+        const cardLeft = (idea.canvasX || 0) * zoom + panOffset.x;
+        const cardTop = (idea.canvasY || 0) * zoom + panOffset.y;
+        const cardRight = cardLeft + (256 * zoom); // Card width scaled
+        const cardBottom = cardTop + (180 * zoom); // Card height scaled
+        
+        // Check if rectangles intersect
+        return !(rectRight < cardLeft || rectLeft > cardRight || rectBottom < cardTop || rectTop > cardBottom);
+      });
+    }, [ideas, zoom, panOffset]);
+
     // Canvas panning handlers
     const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
       // Handle selection clearing first
@@ -73,16 +124,41 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         setExpandedCardId(null);
       }
       
-      // Only start panning if clicking on empty canvas (not on cards)
+      // Only handle if clicking on empty canvas (not on cards)
       if (e.target === canvasRef.current && e.button === 0) {
-        setIsPanning(true);
-        setLastPanPoint({ x: e.clientX, y: e.clientY });
-        e.preventDefault();
+        const isModifier = e.ctrlKey || e.metaKey;
+        
+        if (isModifier && selectedIdeaIds.size === 0) {
+          // Start rectangle selection
+          setIsSelecting(true);
+          setSelectionStart({ x: e.clientX, y: e.clientY });
+          setSelectionEnd({ x: e.clientX, y: e.clientY });
+          e.preventDefault();
+        } else if (!isModifier) {
+          // Start panning
+          setIsPanning(true);
+          setLastPanPoint({ x: e.clientX, y: e.clientY });
+          e.preventDefault();
+        }
       }
-    }, [handleCanvasClick, expandedCardId]);
+    }, [handleCanvasClick, expandedCardId, selectedIdeaIds.size]);
 
     const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
-      if (isPanning && onPanChange) {
+      if (isSelecting) {
+        // Update selection rectangle
+        setSelectionEnd({ x: e.clientX, y: e.clientY });
+        
+        // Get cards within selection rectangle
+        const selectedCards = getCardsInRectangle(
+          selectionStart.x, selectionStart.y,
+          e.clientX, e.clientY
+        );
+        
+        // Update selection for visual feedback (temporarily)
+        selectedCards.forEach(idea => {
+          onIdeaSelect(idea.id, true);
+        });
+      } else if (isPanning && onPanChange) {
         const deltaX = e.clientX - lastPanPoint.x;
         const deltaY = e.clientY - lastPanPoint.y;
         
@@ -93,11 +169,26 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         
         setLastPanPoint({ x: e.clientX, y: e.clientY });
       }
-    }, [isPanning, lastPanPoint, panOffset, onPanChange]);
+    }, [isSelecting, isPanning, lastPanPoint, panOffset, onPanChange, selectionStart, getCardsInRectangle, onIdeaSelect]);
 
     const handleCanvasMouseUp = useCallback(() => {
+      if (isSelecting) {
+        // Finalize rectangle selection
+        const selectedCards = getCardsInRectangle(
+          selectionStart.x, selectionStart.y,
+          selectionEnd.x, selectionEnd.y
+        );
+        
+        // Apply final selection
+        selectedCards.forEach(idea => {
+          onIdeaSelect(idea.id, true);
+        });
+        
+        setIsSelecting(false);
+      }
+      
       setIsPanning(false);
-    }, []);
+    }, [isSelecting, selectionStart, selectionEnd, getCardsInRectangle, onIdeaSelect]);
 
     useEffect(() => {
       const canvas = canvasRef.current;
@@ -164,7 +255,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       <div
         ref={canvasRef}
         data-testid="infinite-canvas"
-        className={`relative w-full h-full overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`relative w-full h-full overflow-hidden ${
+          isPanning ? 'cursor-grabbing' : 
+          isSelecting ? 'cursor-crosshair' :
+          isModifierPressed ? 'cursor-crosshair' : 
+          'cursor-grab'
+        }`}
         style={{
           transition: 'transform 0.1s ease-out'
         }}
@@ -247,6 +343,24 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
             </div>
           );
         })}
+
+        {/* Selection Rectangle */}
+        {isSelecting && (
+          <div
+            style={{
+              position: 'absolute',
+              left: Math.min(selectionStart.x, selectionEnd.x),
+              top: Math.min(selectionStart.y, selectionEnd.y),
+              width: Math.abs(selectionEnd.x - selectionStart.x),
+              height: Math.abs(selectionEnd.y - selectionStart.y),
+              border: '2px dashed #3B82F6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              pointerEvents: 'none',
+              zIndex: 500,
+            }}
+            data-testid="selection-rectangle"
+          />
+        )}
 
         {/* Bulk Action Menu */}
         {bulkMenuPosition && selectedIdeaIds.size > 0 && (
