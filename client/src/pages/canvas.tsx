@@ -292,6 +292,18 @@ export default function Canvas() {
     }
   };
 
+  // Handle bulk selection for rectangle selection
+  const handleBulkSelect = (ideaIds: string[]) => {
+    const newSelected = new Set(selectedIdeaIds);
+    
+    // Add all the new ideas to the selection
+    ideaIds.forEach(id => {
+      newSelected.add(id);
+    });
+    
+    setSelectedIdeaIds(newSelected);
+  };
+
   const handleBulkDelete = () => {
     const ideaIds = Array.from(selectedIdeaIds);
     Promise.all(ideaIds.map(id => apiRequest("DELETE", `/api/ideas/${id}`)))
@@ -492,6 +504,7 @@ export default function Canvas() {
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}
               onIdeaSelect={handleIdeaSelect}
+              onBulkSelect={handleBulkSelect}
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}
               onNewGroup={handleNewGroup}

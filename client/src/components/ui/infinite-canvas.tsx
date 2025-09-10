@@ -16,6 +16,7 @@ interface InfiniteCanvasProps {
   onIdeaEdit: (ideaId: string) => void;
   onIdeaDelete: (ideaId: string) => void;
   onIdeaSelect: (ideaId: string, isCtrlPressed: boolean) => void;
+  onBulkSelect?: (ideaIds: string[]) => void;
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
   onNewGroup: () => void;
@@ -27,7 +28,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -105,13 +106,6 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       const rectTop = Math.min(startY, endY);
       const rectBottom = Math.max(startY, endY);
       
-      console.log('🔍 Rectangle Selection - Screen coords:', {
-        left: rectLeft,
-        right: rectRight,
-        top: rectTop,
-        bottom: rectBottom,
-        size: `${rectRight - rectLeft}x${rectBottom - rectTop}`
-      });
       
       const intersectingCards: typeof ideas = [];
       
@@ -130,25 +124,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           cardBottom > rectTop       // Card bottom edge is below rectangle top edge
         );
         
-        if (intersects) {
-          console.log(`🃏 Card "${idea.title}" intersects:`, {
-            screenBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
-            tests: {
-              cardLeftLessThanRectRight: cardLeft < rectRight,
-              cardRightGreaterThanRectLeft: cardRight > rectLeft,
-              cardTopLessThanRectBottom: cardTop < rectBottom,
-              cardBottomGreaterThanRectTop: cardBottom > rectTop
-            }
-          });
-        }
         
         if (intersects) {
           intersectingCards.push(idea);
         }
       });
       
-      console.log(`✅ Total intersecting cards: ${intersectingCards.length}`);
-      console.log('📋 Selected card IDs:', intersectingCards.map(card => card.id));
       
       return intersectingCards;
     }, [ideas, zoom, panOffset]);
@@ -179,11 +160,6 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           const canvasRelativeX = e.clientX - canvasRect.left;
           const canvasRelativeY = e.clientY - canvasRect.top;
           
-          console.log('🎯 Starting rectangle selection:', {
-            screenCoords: { x: e.clientX, y: e.clientY },
-            canvasRect: canvasRect,
-            canvasRelativeCoords: { x: canvasRelativeX, y: canvasRelativeY }
-          });
           
           // Start rectangle selection when modifier is pressed
           setIsSelecting(true);
@@ -226,10 +202,21 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           selectionEnd.x, selectionEnd.y
         );
         
-        // Apply final selection - select all cards in the rectangle
-        selectedCards.forEach(idea => {
-          onIdeaSelect(idea.id, true);
-        });
+        
+        // Apply rectangle selection using bulk selection if available
+        if (selectedCards.length > 0) {
+          const cardIds = selectedCards.map(idea => idea.id);
+          
+          if (onBulkSelect) {
+            // Use bulk selection method if available
+            onBulkSelect(cardIds);
+          } else {
+            // Fallback to individual selection (with potential toggle issues)
+            selectedCards.forEach(idea => {
+              onIdeaSelect(idea.id, true);
+            });
+          }
+        }
         
         setIsSelecting(false);
       }
