@@ -376,7 +376,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
               position: 'absolute',
               left: bulkMenuPosition.x - 24, // Center the 48px wide button
               top: bulkMenuPosition.y - 24, // Center the 48px tall button
-              zIndex: 1000,
+              zIndex: 1100, // Higher z-index to appear above cards
             }}
           >
             <DropdownMenu>
