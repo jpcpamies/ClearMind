@@ -178,16 +178,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         // Update selection rectangle
         setSelectionEnd({ x: e.clientX, y: e.clientY });
         
-        // Get cards within selection rectangle
-        const selectedCards = getCardsInRectangle(
-          selectionStart.x, selectionStart.y,
-          e.clientX, e.clientY
-        );
-        
-        // Update selection for visual feedback (temporarily)
-        selectedCards.forEach(idea => {
-          onIdeaSelect(idea.id, true);
-        });
+        // Note: We'll handle the actual selection on mouse up to avoid excessive updates
       } else if (isPanning && onPanChange) {
         const deltaX = e.clientX - lastPanPoint.x;
         const deltaY = e.clientY - lastPanPoint.y;
@@ -209,7 +200,9 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           selectionEnd.x, selectionEnd.y
         );
         
-        // Apply final selection
+        console.log('Finalizing rectangle selection with', selectedCards.length, 'cards');
+        
+        // Apply final selection - select all cards in the rectangle
         selectedCards.forEach(idea => {
           onIdeaSelect(idea.id, true);
         });
