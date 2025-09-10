@@ -120,6 +120,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       // Handle selection clearing first
       handleCanvasClick(e);
       
+      // Clear multi-selection when clicking on empty canvas
+      if (e.target === canvasRef.current && selectedIdeaIds.size > 0) {
+        // Clear the selectedIdeaIds state by calling the selection handler with no ctrl key
+        onIdeaSelect('', false); // This will clear the selection
+      }
+      
       // Contract expanded card if clicking outside of it
       if (expandedCardId && e.target === canvasRef.current) {
         setExpandedCardId(null);
@@ -142,7 +148,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           e.preventDefault();
         }
       }
-    }, [handleCanvasClick, expandedCardId, selectedIdeaIds.size]);
+    }, [handleCanvasClick, expandedCardId, selectedIdeaIds, onIdeaSelect]);
 
     const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
       if (isSelecting) {
