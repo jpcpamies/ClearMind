@@ -73,9 +73,15 @@ export default function IdeaCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [mouseDownPos, setMouseDownPos] = useState<{x: number, y: number} | null>(null);
   const [wasDragged, setWasDragged] = useState(false);
   const queryClient = useQueryClient();
+
+  // Get ideas data for the modal
+  const { data: ideas = [] } = useQuery<Idea[]>({
+    queryKey: ['/api/ideas'],
+  });
 
   const priorities = [
     { value: 'low', label: 'Low' },
