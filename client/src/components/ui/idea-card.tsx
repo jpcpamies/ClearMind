@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { MoreHorizontal, Edit, Trash } from "lucide-react";
+import { MoreHorizontal, Edit, Trash, Plus } from "lucide-react";
 import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "./dropdown-menu";
 import type { Idea, Group } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface IdeaCardProps {
   idea: Idea;
   group?: Group;
+  groups: Group[];
   color: string;
   position: { x: number; y: number };
   isDragging: boolean;
@@ -23,6 +27,7 @@ interface IdeaCardProps {
   onUpdate: (updates: Partial<Idea>) => void;
   onDelete: () => void;
   onExpand?: () => void;
+  onCreateGroup?: (name: string) => void;
 }
 
 const getCardStyle = (color: string) => {
@@ -50,6 +55,7 @@ const priorityColors = {
 export default function IdeaCard({
   idea,
   group,
+  groups,
   color,
   position,
   isDragging,
@@ -61,10 +67,69 @@ export default function IdeaCard({
   onUpdate,
   onDelete,
   onExpand,
+  onCreateGroup,
 }: IdeaCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
   const [mouseDownPos, setMouseDownPos] = useState<{x: number, y: number} | null>(null);
   const [wasDragged, setWasDragged] = useState(false);
+  const queryClient = useQueryClient();
+
+  const priorities = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' }
+  ];
+
+  // Handle group change
+  const handleGroupChange = async (groupId: string) => {
+    try {
+      await apiRequest(`/api/ideas/${idea.id}`, {
+        method: 'PUT',
+        body: { groupId: groupId === 'unassigned' ? null : groupId }
+      });
+      
+      // Invalidate and refetch queries
+      queryClient.invalidateQueries({ queryKey: ['/api/ideas'] });
+      setIsGroupDropdownOpen(false);
+    } catch (error) {
+      console.error('Failed to update group:', error);
+    }
+  };
+
+  // Handle priority change
+  const handlePriorityChange = async (priority: string) => {
+    try {
+      await apiRequest(`/api/ideas/${idea.id}`, {
+        method: 'PUT',
+        body: { priority }
+      });
+      
+      // Invalidate and refetch queries
+      queryClient.invalidateQueries({ queryKey: ['/api/ideas'] });
+      setIsPriorityDropdownOpen(false);
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+    }
+  };
+
+  // Handle new group creation
+  const handleCreateNewGroup = () => {
+    const groupName = prompt('Enter group name:');
+    if (groupName && groupName.trim() && onCreateGroup) {
+      onCreateGroup(groupName.trim());
+      setIsGroupDropdownOpen(false);
+    }
+  };
+
+  // Close all dropdowns when opening another
+  const closeAllDropdowns = () => {
+    setIsGroupDropdownOpen(false);
+    setIsPriorityDropdownOpen(false);
+    setIsMenuOpen(false);
+  };
 
   // Handle mouse down to track potential dragging
   const handleMouseDownWithTracking = (e: React.MouseEvent) => {
@@ -208,32 +273,121 @@ export default function IdeaCard({
       )}
 
       <div className="flex justify-between items-center">
-        <span 
-          className="group-label rounded-full cursor-pointer"
-          style={{
-            fontSize: "12px",
-            padding: "2px 8px",
-            backgroundColor: tagBgColor,
-            color: tagTextColor,
-            borderRadius: "20px",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {group ? group.name : "Unassigned"}
-        </span>
-        <span 
-          className="priority-label rounded-full cursor-pointer"
-          style={{
-            fontSize: "12px", 
-            padding: "2px 8px",
-            backgroundColor: tagBgColor,
-            color: tagTextColor,
-            borderRadius: "20px",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
-        </span>
+        {/* Group Dropdown */}
+        <DropdownMenu open={isGroupDropdownOpen} onOpenChange={setIsGroupDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <span 
+              className="group-label rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+              style={{
+                fontSize: "12px",
+                padding: "2px 8px",
+                backgroundColor: tagBgColor,
+                color: tagTextColor,
+                borderRadius: "20px",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllDropdowns();
+                setIsGroupDropdownOpen(true);
+              }}
+              data-testid={`group-label-${idea.id}`}
+            >
+              {group ? (
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: group.color }}
+                  />
+                  {group.name}
+                </div>
+              ) : (
+                "Unassigned"
+              )}
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="start" 
+            className="w-48 z-[2000]"
+            side="bottom"
+            sideOffset={4}
+          >
+            <DropdownMenuItem
+              onClick={() => handleGroupChange('unassigned')}
+              data-testid="group-option-unassigned"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gray-300" />
+                Unassigned
+              </div>
+            </DropdownMenuItem>
+            {groups.map((groupOption) => (
+              <DropdownMenuItem
+                key={groupOption.id}
+                onClick={() => handleGroupChange(groupOption.id)}
+                data-testid={`group-option-${groupOption.name.toLowerCase().replace(/\s+/g, '-')}`}
+                className={group?.id === groupOption.id ? 'bg-accent' : ''}
+              >
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: groupOption.color }}
+                  />
+                  {groupOption.name}
+                </div>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleCreateNewGroup}
+              data-testid="create-new-group"
+              className="text-blue-600"
+            >
+              <Plus className="mr-2 h-3 w-3" />
+              Create New Group
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Priority Dropdown */}
+        <DropdownMenu open={isPriorityDropdownOpen} onOpenChange={setIsPriorityDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <span 
+              className="priority-label rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+              style={{
+                fontSize: "12px", 
+                padding: "2px 8px",
+                backgroundColor: tagBgColor,
+                color: tagTextColor,
+                borderRadius: "20px",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeAllDropdowns();
+                setIsPriorityDropdownOpen(true);
+              }}
+              data-testid={`priority-label-${idea.id}`}
+            >
+              {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="end" 
+            className="w-32 z-[2000]"
+            side="bottom"
+            sideOffset={4}
+          >
+            {priorities.map((priorityOption) => (
+              <DropdownMenuItem
+                key={priorityOption.value}
+                onClick={() => handlePriorityChange(priorityOption.value)}
+                data-testid={`priority-option-${priorityOption.value}`}
+                className={(idea.priority || 'medium') === priorityOption.value ? 'bg-accent' : ''}
+              >
+                {priorityOption.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
