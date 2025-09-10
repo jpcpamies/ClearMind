@@ -314,10 +314,10 @@ export default function Canvas() {
     const cardPositions: Array<{ id: string; canvasX: number; canvasY: number }> = [];
 
     if (mode === 'grid') {
-      // Grid mode: arrange cards in a grid with 15px margins
+      // Grid mode: arrange cards in a grid with 20px margins
       const cardWidth = 256;
       const cardHeight = 180;
-      const margin = 15;
+      const margin = 20;
       const columns = Math.ceil(Math.sqrt(ideas.length));
       
       ideas.forEach((idea, index) => {
@@ -332,10 +332,10 @@ export default function Canvas() {
       });
 
     } else if (mode === 'byGroup') {
-      // By Group mode: organize by group in vertical columns
+      // By Group mode: organize by group in vertical columns  
       const cardHeight = 180;
-      const cardMargin = 15;
-      const columnSpacing = 200;
+      const cardMargin = 20;
+      const columnSpacing = 60;
       
       // Group ideas by groupId
       const groupedIdeas: { [key: string]: Idea[] } = {};
@@ -410,17 +410,28 @@ export default function Canvas() {
         // After organization, fit to canvas for by group mode
         setTimeout(() => {
           if (mode === 'byGroup') {
-            // Manually trigger fit to canvas without handleResetView reference
+            // Trigger fit to canvas inline for proper scaling and centering
             setZoom(1);
             setTimeout(() => {
               if (ideas.length > 0) {
                 const bounds = calculateCardsBounds(ideas);
                 if (bounds) {
-                  const viewportCenterX = 892;
-                  const viewportCenterY = 426;
-                  const offsetX = viewportCenterX - bounds.centerX;
-                  const offsetY = viewportCenterY - bounds.centerY;
-                  setPanOffset({ x: offsetX, y: offsetY });
+                  // Calculate proper viewport center accounting for sidebar
+                  const sidebarElement = document.querySelector('.fixed.top-3.left-3.bottom-3.z-floating.w-80');
+                  let sidebarOccupiedSpace = 332; // fallback
+                  if (sidebarElement) {
+                    const sidebarRect = sidebarElement.getBoundingClientRect();
+                    sidebarOccupiedSpace = sidebarRect.right;
+                  }
+                  const canvasRect = canvasRef.current?.getBoundingClientRect();
+                  if (canvasRect) {
+                    const effectiveWidth = canvasRect.width - sidebarOccupiedSpace;
+                    const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
+                    const viewportCenterY = canvasRect.height / 2;
+                    const offsetX = viewportCenterX - bounds.centerX;
+                    const offsetY = viewportCenterY - bounds.centerY;
+                    setPanOffset({ x: offsetX, y: offsetY });
+                  }
                 }
               }
             }, 50);
