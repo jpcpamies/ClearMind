@@ -668,6 +668,7 @@ export default function Canvas() {
               panOffset={panOffset}
               selectedIdeaIds={selectedIdeaIds}
               sortMode={sortMode}
+              isSidebarCollapsed={isSidebarCollapsed}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}

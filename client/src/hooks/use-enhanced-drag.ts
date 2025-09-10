@@ -28,6 +28,7 @@ interface UseEnhancedDragProps {
   panOffset?: { x: number; y: number };
   selectedIdeaIds?: Set<string>;
   onBulkDrop?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
+  isSidebarCollapsed?: boolean;
 }
 
 const initialDragState: DragState = {
@@ -47,7 +48,8 @@ export function useEnhancedDrag({
   zoom = 1, 
   panOffset = { x: 0, y: 0 },
   selectedIdeaIds = new Set(),
-  onBulkDrop
+  onBulkDrop,
+  isSidebarCollapsed = false
 }: UseEnhancedDragProps) {
   const [dragState, setDragState] = useState<DragState>(initialDragState);
   const dragStateRef = useRef<DragState>(dragState);
@@ -60,19 +62,26 @@ export function useEnhancedDrag({
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+    // Account for sidebar offset when converting screen coords to canvas coords
+    const sidebarOffset = isSidebarCollapsed ? 0 : 344; // 332px sidebar + 12px margin = 344px
+    const adjustedScreenX = screenX - sidebarOffset;
+    
     return {
-      x: (screenX - panOffset.x) / zoom,
+      x: (adjustedScreenX - panOffset.x) / zoom,
       y: (screenY - panOffset.y) / zoom
     };
-  }, [panOffset, zoom]);
+  }, [panOffset, zoom, isSidebarCollapsed]);
 
   // Convert canvas coordinates to screen coordinates
   const canvasToScreen = useCallback((canvasX: number, canvasY: number) => {
+    // Account for sidebar offset when converting canvas coords to screen coords
+    const sidebarOffset = isSidebarCollapsed ? 0 : 344; // 332px sidebar + 12px margin = 344px
+    
     return {
-      x: canvasX * zoom + panOffset.x,
+      x: canvasX * zoom + panOffset.x + sidebarOffset,
       y: canvasY * zoom + panOffset.y
     };
-  }, [panOffset, zoom]);
+  }, [panOffset, zoom, isSidebarCollapsed]);
 
   // Debounced position save function
   const debouncedSave = useCallback((cardId: string, canvasPosition: Position) => {
