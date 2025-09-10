@@ -97,14 +97,16 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       setExpandedCardId(current => current === ideaId ? null : ideaId);
     }, []);
 
-    // Rectangle intersection detection
+    // Rectangle intersection detection with improved debugging
     const getCardsInRectangle = useCallback((startX: number, startY: number, endX: number, endY: number) => {
+      // Normalize rectangle coordinates (handle any drag direction)
       const rectLeft = Math.min(startX, endX);
       const rectRight = Math.max(startX, endX);
       const rectTop = Math.min(startY, endY);
       const rectBottom = Math.max(startY, endY);
       
-      console.log('Selection rectangle:', {
+      console.log('🔍 Rectangle Selection Debug:');
+      console.log('📏 Selection rectangle (screen coords):', {
         left: rectLeft,
         right: rectRight,
         top: rectTop,
@@ -113,28 +115,44 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
         height: rectBottom - rectTop
       });
       
-      const selectedCards = ideas.filter(idea => {
+      const intersectingCards = [];
+      
+      ideas.forEach(idea => {
+        // Calculate card position in screen coordinates
         const cardLeft = (idea.canvasX || 0) * zoom + panOffset.x;
         const cardTop = (idea.canvasY || 0) * zoom + panOffset.y;
         const cardRight = cardLeft + (256 * zoom); // Card width scaled
         const cardBottom = cardTop + (180 * zoom); // Card height scaled
         
-        // Check if rectangles intersect - improved algorithm
-        const intersects = !(rectRight < cardLeft || rectLeft > cardRight || rectBottom < cardTop || rectTop > cardBottom);
+        // Improved intersection detection algorithm
+        const intersects = (
+          cardLeft < rectRight &&    // Card left edge is left of rectangle right edge
+          cardRight > rectLeft &&    // Card right edge is right of rectangle left edge
+          cardTop < rectBottom &&    // Card top edge is above rectangle bottom edge
+          cardBottom > rectTop       // Card bottom edge is below rectangle top edge
+        );
+        
+        console.log(`🃏 Card "${idea.title}" (ID: ${idea.id}):`, {
+          canvasPos: { x: idea.canvasX || 0, y: idea.canvasY || 0 },
+          screenBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
+          intersects: intersects,
+          tests: {
+            cardLeftLessThanRectRight: cardLeft < rectRight,
+            cardRightGreaterThanRectLeft: cardRight > rectLeft,
+            cardTopLessThanRectBottom: cardTop < rectBottom,
+            cardBottomGreaterThanRectTop: cardBottom > rectTop
+          }
+        });
         
         if (intersects) {
-          console.log(`Card ${idea.id} intersects:`, {
-            cardBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
-            cardTitle: idea.title,
-            intersects: true
-          });
+          intersectingCards.push(idea);
         }
-        
-        return intersects;
       });
       
-      console.log(`Found ${selectedCards.length} cards in rectangle`);
-      return selectedCards;
+      console.log(`✅ Total intersecting cards: ${intersectingCards.length}`);
+      console.log('📋 Selected card IDs:', intersectingCards.map(card => card.id));
+      
+      return intersectingCards;
     }, [ideas, zoom, panOffset]);
 
     // Canvas panning handlers
