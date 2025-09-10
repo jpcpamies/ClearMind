@@ -41,7 +41,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       }
     }, [ref]);
     
-    const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick } = useEnhancedDrag({
+    const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick, wasDragged } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
         // Position is already in canvas coordinates, no conversion needed
         onIdeaUpdate(itemId, { 
@@ -54,8 +54,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       panOffset,
     });
 
-    // Handle card expansion
-    const handleCardExpand = useCallback((ideaId: string) => {
+    // Handle card expansion - only expand if not dragged
+    const handleCardExpand = useCallback((ideaId: string, wasReallyDragged: boolean = false) => {
+      // Don't expand if this was a drag operation
+      if (wasReallyDragged) {
+        return;
+      }
       setExpandedCardId(current => current === ideaId ? null : ideaId);
     }, []);
 

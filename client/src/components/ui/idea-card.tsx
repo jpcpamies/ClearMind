@@ -63,6 +63,29 @@ export default function IdeaCard({
   onExpand,
 }: IdeaCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mouseDownPos, setMouseDownPos] = useState<{x: number, y: number} | null>(null);
+  const [wasDragged, setWasDragged] = useState(false);
+
+  // Handle mouse down to track potential dragging
+  const handleMouseDownWithTracking = (e: React.MouseEvent) => {
+    setMouseDownPos({ x: e.clientX, y: e.clientY });
+    setWasDragged(false);
+    onMouseDown(e);
+  };
+
+  // Handle mouse up to detect if dragging occurred
+  const handleMouseUpWithTracking = (e: React.MouseEvent) => {
+    if (mouseDownPos) {
+      const deltaX = Math.abs(e.clientX - mouseDownPos.x);
+      const deltaY = Math.abs(e.clientY - mouseDownPos.y);
+      const dragThreshold = 5; // pixels
+      
+      if (deltaX > dragThreshold || deltaY > dragThreshold) {
+        setWasDragged(true);
+      }
+    }
+    setMouseDownPos(null);
+  };
 
   // Handle card expansion - avoid menu dots, group label, and priority label
   const handleCardClick = (e: React.MouseEvent) => {
@@ -77,6 +100,7 @@ export default function IdeaCard({
     
     if (!isInteractiveElement && onExpand) {
       e.stopPropagation();
+      // Pass drag detection info to expansion handler
       onExpand();
     }
   };
@@ -89,7 +113,7 @@ export default function IdeaCard({
   const tagBgColor = isGrouped ? "rgba(255,255,255,0.2)" : "#F3F4F6";
   const tagTextColor = isGrouped ? "#FFFFFF" : "#555555";
   const titleColor = isGrouped ? "#FFFFFF" : "#1A1A1A";
-  const descriptionColor = isGrouped ? "#E6E6E6" : "#666666";
+  const descriptionColor = isGrouped ? "#FFFFFF" : "#666666";
 
   return (
     <div
@@ -113,9 +137,10 @@ export default function IdeaCard({
         maxHeight: isExpanded ? 'none' : '180px',
         overflow: isExpanded ? 'visible' : 'hidden',
       }}
-      onMouseDown={isExpanded ? undefined : onMouseDown}
+      onMouseDown={isExpanded ? undefined : handleMouseDownWithTracking}
+      onMouseUp={handleMouseUpWithTracking}
       onTouchStart={isExpanded ? undefined : onTouchStart}
-      onClick={handleCardClick}
+      onClick={wasDragged ? undefined : handleCardClick}
     >
       <div className="flex justify-between items-start mb-2">
         <h4 

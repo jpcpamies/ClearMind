@@ -423,5 +423,7 @@ export function useEnhancedDrag({
     handleCanvasClick,
     handleMouseMove: () => {},
     handleMouseUp: () => {},
+    // Expose whether the current interaction was a drag (for preventing expansion)
+    wasDragged: dragState.isDragging,
   };
 }
