@@ -8,6 +8,7 @@ import TodoListGrid from "@/components/ui/todolist-grid";
 import IdeaModal from "@/components/ui/idea-modal";
 import TodoListModal from "@/components/ui/todolist-modal";
 import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
+import GroupModal from "@/components/ui/group-modal";
 import ZoomControls from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
 import type { Idea, Group } from "@shared/schema";
@@ -23,6 +24,8 @@ export default function Canvas() {
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [isInitialPositioned, setIsInitialPositioned] = useState(false);
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<Set<string>>(new Set());
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -329,6 +332,16 @@ export default function Canvas() {
       });
   };
 
+  const handleNewGroup = () => {
+    setEditingGroup(null);
+    setIsGroupModalOpen(true);
+  };
+
+  const handleCloseGroupModal = () => {
+    setIsGroupModalOpen(false);
+    setEditingGroup(null);
+  };
+
   const handleTodoListOpen = (groupId: string) => {
     setSelectedGroupId(groupId);
     setIsTodoModalOpen(true);
@@ -481,6 +494,7 @@ export default function Canvas() {
               onIdeaSelect={handleIdeaSelect}
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}
+              onNewGroup={handleNewGroup}
               onPanChange={setPanOffset}
               onWheel={handleWheel}
               onTouchStart={handleTouchStart}
@@ -534,6 +548,12 @@ export default function Canvas() {
         onClose={() => setIsCreateTodoModalOpen(false)}
         groups={groups}
         ideas={ideas}
+      />
+
+      <GroupModal
+        isOpen={isGroupModalOpen}
+        onClose={handleCloseGroupModal}
+        editingGroup={editingGroup}
       />
     </div>
   );

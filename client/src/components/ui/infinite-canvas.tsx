@@ -3,7 +3,7 @@ import { useEnhancedDrag } from "@/hooks/use-enhanced-drag";
 import IdeaCard from "./idea-card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, FolderOpen } from "lucide-react";
+import { MoreHorizontal, Trash2, FolderOpen, Plus } from "lucide-react";
 import type { Idea, Group } from "@shared/schema";
 
 interface InfiniteCanvasProps {
@@ -18,6 +18,7 @@ interface InfiniteCanvasProps {
   onIdeaSelect: (ideaId: string, isCtrlPressed: boolean) => void;
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
+  onNewGroup: () => void;
   onPanChange?: (offset: { x: number; y: number }) => void;
   onWheel?: (e: WheelEvent) => void;
   onTouchStart?: (e: TouchEvent) => void;
@@ -26,7 +27,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -391,6 +392,15 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete {selectedIdeaIds.size} ideas
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  data-testid="button-bulk-create-group"
+                  onClick={onNewGroup}
+                  className="text-primary focus:text-primary"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New Group
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {groups.map((group) => (
