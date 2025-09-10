@@ -12,6 +12,7 @@ interface InfiniteCanvasProps {
   zoom: number;
   panOffset: { x: number; y: number };
   selectedIdeaIds: Set<string>;
+  sortMode?: 'free' | 'grid' | 'byGroup';
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
   onIdeaEdit: (ideaId: string) => void;
   onIdeaDelete: (ideaId: string) => void;
@@ -29,7 +30,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -77,19 +78,47 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       };
     }, []);
     
+    // Grid snapping function
+    const snapToGrid = useCallback((x: number, y: number) => {
+      if (sortMode !== 'grid') return { x, y };
+      
+      const cardWidth = 256;
+      const cardHeight = 180;
+      const margin = 15;
+      const gridWidth = cardWidth + margin;
+      const gridHeight = cardHeight + margin;
+      
+      return {
+        x: Math.round(x / gridWidth) * gridWidth,
+        y: Math.round(y / gridHeight) * gridHeight
+      };
+    }, [sortMode]);
+
     const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick, wasDragged } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
-        // Position is already in canvas coordinates, no conversion needed
+        // Apply grid snapping if in grid mode
+        const snappedPosition = snapToGrid(canvasPosition.x, canvasPosition.y);
         onIdeaUpdate(itemId, { 
-          canvasX: canvasPosition.x, 
-          canvasY: canvasPosition.y 
+          canvasX: snappedPosition.x, 
+          canvasY: snappedPosition.y 
         });
       },
       ideas,
       zoom,
       panOffset,
       selectedIdeaIds,
-      onBulkDrop: onBulkUpdate,
+      onBulkDrop: (updates) => {
+        // Apply grid snapping to bulk updates
+        const snappedUpdates = updates.map(update => {
+          const snapped = snapToGrid(update.canvasX, update.canvasY);
+          return {
+            ...update,
+            canvasX: snapped.x,
+            canvasY: snapped.y
+          };
+        });
+        onBulkUpdate?.(snappedUpdates);
+      },
     });
 
     // Handle card expansion - only expand if not dragged

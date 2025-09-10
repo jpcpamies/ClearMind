@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,7 @@ import IdeaModal from "@/components/ui/idea-modal";
 import TodoListModal from "@/components/ui/todolist-modal";
 import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
 import GroupModal from "@/components/ui/group-modal";
-import ZoomControls from "@/components/ui/zoom-controls";
+import ZoomControls, { SortMode } from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
 import type { Idea, Group } from "@shared/schema";
 
@@ -24,6 +24,8 @@ export default function Canvas() {
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [isInitialPositioned, setIsInitialPositioned] = useState(false);
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<Set<string>>(new Set());
+  const [sortMode, setSortMode] = useState<SortMode>('free');
+  const [isOrganizing, setIsOrganizing] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
@@ -305,6 +307,142 @@ export default function Canvas() {
   };
 
   // Handle bulk position updates for multiple cards
+  // Organization algorithms
+  const organizeCards = useCallback((mode: SortMode, ideas: Idea[], groups: Group[]) => {
+    if (mode === 'free') return; // No organization needed for free mode
+
+    const cardPositions: Array<{ id: string; canvasX: number; canvasY: number }> = [];
+
+    if (mode === 'grid') {
+      // Grid mode: arrange cards in a grid with 15px margins
+      const cardWidth = 256;
+      const cardHeight = 180;
+      const margin = 15;
+      const columns = Math.ceil(Math.sqrt(ideas.length));
+      
+      ideas.forEach((idea, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        
+        cardPositions.push({
+          id: idea.id,
+          canvasX: col * (cardWidth + margin),
+          canvasY: row * (cardHeight + margin)
+        });
+      });
+
+    } else if (mode === 'byGroup') {
+      // By Group mode: organize by group in vertical columns
+      const cardHeight = 180;
+      const cardMargin = 15;
+      const columnSpacing = 200;
+      
+      // Group ideas by groupId
+      const groupedIdeas: { [key: string]: Idea[] } = {};
+      const ungroupedIdeas: Idea[] = [];
+      
+      ideas.forEach(idea => {
+        if (idea.groupId) {
+          if (!groupedIdeas[idea.groupId]) {
+            groupedIdeas[idea.groupId] = [];
+          }
+          groupedIdeas[idea.groupId].push(idea);
+        } else {
+          ungroupedIdeas.push(idea);
+        }
+      });
+
+      // Sort ideas within each group by creation date
+      Object.keys(groupedIdeas).forEach(groupId => {
+        groupedIdeas[groupId].sort((a, b) => 
+          new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
+        );
+      });
+
+      // Sort ungrouped ideas by creation date
+      ungroupedIdeas.sort((a, b) => 
+        new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
+      );
+
+      let columnIndex = 0;
+
+      // Position grouped ideas
+      Object.keys(groupedIdeas).forEach(groupId => {
+        const ideasInGroup = groupedIdeas[groupId];
+        ideasInGroup.forEach((idea, index) => {
+          cardPositions.push({
+            id: idea.id,
+            canvasX: columnIndex * (256 + columnSpacing),
+            canvasY: index * (cardHeight + cardMargin)
+          });
+        });
+        columnIndex++;
+      });
+
+      // Position ungrouped ideas in their own column
+      if (ungroupedIdeas.length > 0) {
+        ungroupedIdeas.forEach((idea, index) => {
+          cardPositions.push({
+            id: idea.id,
+            canvasX: columnIndex * (256 + columnSpacing),
+            canvasY: index * (cardHeight + cardMargin)
+          });
+        });
+      }
+    }
+
+    // Update all card positions
+    if (cardPositions.length > 0) {
+      setIsOrganizing(true);
+      
+      // Use Promise.all for immediate position updates
+      Promise.all(
+        cardPositions.map(update => 
+          apiRequest("PUT", `/api/ideas/${update.id}`, {
+            canvasX: update.canvasX,
+            canvasY: update.canvasY
+          })
+        )
+      ).then(() => {
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+        
+        // After organization, fit to canvas for by group mode
+        setTimeout(() => {
+          if (mode === 'byGroup') {
+            // Manually trigger fit to canvas without handleResetView reference
+            setZoom(1);
+            setTimeout(() => {
+              if (ideas.length > 0) {
+                const bounds = calculateCardsBounds(ideas);
+                if (bounds) {
+                  const viewportCenterX = 892;
+                  const viewportCenterY = 426;
+                  const offsetX = viewportCenterX - bounds.centerX;
+                  const offsetY = viewportCenterY - bounds.centerY;
+                  setPanOffset({ x: offsetX, y: offsetY });
+                }
+              }
+            }, 50);
+          }
+          setIsOrganizing(false);
+        }, 100);
+        
+        toast({
+          title: "Cards organized",
+          description: `Organized ${cardPositions.length} cards in ${mode} mode`,
+        });
+      }).catch(() => {
+        toast({
+          title: "Error", 
+          description: "Failed to organize some cards",
+          variant: "destructive",
+        });
+        setIsOrganizing(false);
+      });
+    }
+  }, [apiRequest, queryClient, toast]);
+
   const handleBulkUpdate = (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => {
     
     // Update all cards simultaneously
@@ -527,6 +665,7 @@ export default function Canvas() {
               zoom={zoom}
               panOffset={panOffset}
               selectedIdeaIds={selectedIdeaIds}
+              sortMode={sortMode}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}
@@ -544,11 +683,29 @@ export default function Canvas() {
             />
           </div>
 
-          {/* Zoom Controls - now positioned internally */}
+          {/* Zoom Controls with Sort Mode - now positioned internally */}
           <ZoomControls
             zoom={zoom}
             onZoomChange={setZoom}
             onResetView={handleResetView}
+            sortMode={sortMode}
+            onSortModeChange={(mode) => {
+              setSortMode(mode);
+              // Add organizing class to all cards for smooth animation
+              if (mode !== 'free') {
+                setTimeout(() => {
+                  document.querySelectorAll('.idea-card').forEach(card => {
+                    card.classList.add('card-organizing');
+                  });
+                  setTimeout(() => {
+                    document.querySelectorAll('.idea-card').forEach(card => {
+                      card.classList.remove('card-organizing');
+                    });
+                  }, 400);
+                }, 50);
+              }
+              organizeCards(mode, ideas, groups);
+            }}
           />
         </>
       ) : (
