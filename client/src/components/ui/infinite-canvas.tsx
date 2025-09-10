@@ -84,7 +84,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       
       const cardWidth = 256;
       const cardHeight = 180;
-      const margin = 20;
+      const margin = 20; // 20px spacing for grid mode
       const gridWidth = cardWidth + margin;
       const gridHeight = cardHeight + margin;
       

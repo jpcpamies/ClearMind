@@ -333,9 +333,10 @@ export default function Canvas() {
 
     } else if (mode === 'byGroup') {
       // By Group mode: organize by group in vertical columns  
+      const cardWidth = 256;
       const cardHeight = 180;
-      const cardMargin = 20;
-      const columnSpacing = 60;
+      const verticalMargin = 20; // 20px spacing between cards vertically
+      const horizontalMargin = 60; // 60px spacing between groups horizontally
       
       // Group ideas by groupId
       const groupedIdeas: { [key: string]: Idea[] } = {};
@@ -372,8 +373,8 @@ export default function Canvas() {
         ideasInGroup.forEach((idea, index) => {
           cardPositions.push({
             id: idea.id,
-            canvasX: columnIndex * (256 + columnSpacing),
-            canvasY: index * (cardHeight + cardMargin)
+            canvasX: columnIndex * (cardWidth + horizontalMargin),
+            canvasY: index * (cardHeight + verticalMargin)
           });
         });
         columnIndex++;
@@ -384,8 +385,8 @@ export default function Canvas() {
         ungroupedIdeas.forEach((idea, index) => {
           cardPositions.push({
             id: idea.id,
-            canvasX: columnIndex * (256 + columnSpacing),
-            canvasY: index * (cardHeight + cardMargin)
+            canvasX: columnIndex * (cardWidth + horizontalMargin),
+            canvasY: index * (cardHeight + verticalMargin)
           });
         });
       }
