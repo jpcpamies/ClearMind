@@ -105,14 +105,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       const rectTop = Math.min(startY, endY);
       const rectBottom = Math.max(startY, endY);
       
-      console.log('🔍 Rectangle Selection Debug:');
-      console.log('📏 Selection rectangle (screen coords):', {
+      console.log('🔍 Rectangle Selection - Screen coords:', {
         left: rectLeft,
         right: rectRight,
         top: rectTop,
         bottom: rectBottom,
-        width: rectRight - rectLeft,
-        height: rectBottom - rectTop
+        size: `${rectRight - rectLeft}x${rectBottom - rectTop}`
       });
       
       const intersectingCards: typeof ideas = [];
@@ -132,17 +130,17 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           cardBottom > rectTop       // Card bottom edge is below rectangle top edge
         );
         
-        console.log(`🃏 Card "${idea.title}" (ID: ${idea.id}):`, {
-          canvasPos: { x: idea.canvasX || 0, y: idea.canvasY || 0 },
-          screenBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
-          intersects: intersects,
-          tests: {
-            cardLeftLessThanRectRight: cardLeft < rectRight,
-            cardRightGreaterThanRectLeft: cardRight > rectLeft,
-            cardTopLessThanRectBottom: cardTop < rectBottom,
-            cardBottomGreaterThanRectTop: cardBottom > rectTop
-          }
-        });
+        if (intersects) {
+          console.log(`🃏 Card "${idea.title}" intersects:`, {
+            screenBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
+            tests: {
+              cardLeftLessThanRectRight: cardLeft < rectRight,
+              cardRightGreaterThanRectLeft: cardRight > rectLeft,
+              cardTopLessThanRectBottom: cardTop < rectBottom,
+              cardBottomGreaterThanRectTop: cardBottom > rectTop
+            }
+          });
+        }
         
         if (intersects) {
           intersectingCards.push(idea);
