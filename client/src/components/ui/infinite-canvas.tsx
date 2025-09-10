@@ -17,6 +17,7 @@ interface InfiniteCanvasProps {
   onIdeaDelete: (ideaId: string) => void;
   onIdeaSelect: (ideaId: string, isCtrlPressed: boolean) => void;
   onBulkSelect?: (ideaIds: string[]) => void;
+  onBulkUpdate?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
   onNewGroup: () => void;
@@ -28,7 +29,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -87,6 +88,8 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       ideas,
       zoom,
       panOffset,
+      selectedIdeaIds,
+      onBulkDrop: onBulkUpdate,
     });
 
     // Handle card expansion - only expand if not dragged

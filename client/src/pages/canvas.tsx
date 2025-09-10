@@ -304,6 +304,33 @@ export default function Canvas() {
     setSelectedIdeaIds(newSelected);
   };
 
+  // Handle bulk position updates for multiple cards
+  const handleBulkUpdate = (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => {
+    
+    // Update all cards simultaneously
+    Promise.all(
+      updates.map(update => 
+        apiRequest("PUT", `/api/ideas/${update.id}`, {
+          canvasX: update.canvasX,
+          canvasY: update.canvasY
+        })
+      )
+    ).then(() => {
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      toast({
+        title: "Success",
+        description: `Updated positions for ${updates.length} cards`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Error", 
+        description: "Failed to update some card positions",
+        variant: "destructive",
+      });
+    });
+  };
+
   const handleBulkDelete = () => {
     const ideaIds = Array.from(selectedIdeaIds);
     Promise.all(ideaIds.map(id => apiRequest("DELETE", `/api/ideas/${id}`)))
@@ -505,6 +532,7 @@ export default function Canvas() {
               onIdeaDelete={handleIdeaDelete}
               onIdeaSelect={handleIdeaSelect}
               onBulkSelect={handleBulkSelect}
+              onBulkUpdate={handleBulkUpdate}
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}
               onNewGroup={handleNewGroup}

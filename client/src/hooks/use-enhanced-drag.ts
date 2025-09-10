@@ -26,6 +26,8 @@ interface UseEnhancedDragProps {
   ideas: Array<{ id: string; canvasX?: number | null; canvasY?: number | null }>;
   zoom?: number;
   panOffset?: { x: number; y: number };
+  selectedIdeaIds?: Set<string>;
+  onBulkDrop?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
 }
 
 const initialDragState: DragState = {
@@ -43,7 +45,9 @@ export function useEnhancedDrag({
   onDrop, 
   ideas, 
   zoom = 1, 
-  panOffset = { x: 0, y: 0 } 
+  panOffset = { x: 0, y: 0 },
+  selectedIdeaIds = new Set(),
+  onBulkDrop
 }: UseEnhancedDragProps) {
   const [dragState, setDragState] = useState<DragState>(initialDragState);
   const dragStateRef = useRef<DragState>(dragState);
@@ -116,8 +120,12 @@ export function useEnhancedDrag({
     let persistentSelection = new Set<string>();
     let initialCanvasPositions: Record<string, Position> = {};
 
-    // Handle selection logic
-    if (isMultiSelect) {
+    // Handle selection logic - use external selectedIdeaIds if available
+    if (selectedIdeaIds.size > 0 && selectedIdeaIds.has(item.id)) {
+      // Card is part of external selection (e.g., rectangle selection) - drag all selected
+      selectedCards = new Set(selectedIdeaIds);
+      persistentSelection = new Set(selectedIdeaIds);
+    } else if (isMultiSelect) {
       // Multi-select: add to existing selection
       persistentSelection = new Set(currentState.persistentSelection);
       if (persistentSelection.has(item.id)) {
@@ -189,7 +197,7 @@ export function useEnhancedDrag({
     });
 
     document.body.style.cursor = 'grabbing';
-  }, [ideas]);
+  }, [ideas, selectedIdeaIds]);
 
   // Global mouse move handler
   const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
@@ -288,6 +296,10 @@ export function useEnhancedDrag({
       };
       const finalCanvasPos = screenToCanvas(finalScreenPos.x, finalScreenPos.y);
 
+      // Collect all updates for bulk operation
+      const bulkUpdates: Array<{ id: string; canvasX: number; canvasY: number }> = [];
+      let hasSignificantMovement = false;
+
       currentState.selectedCards.forEach(cardId => {
         let cardFinalPos: Position;
 
@@ -314,9 +326,26 @@ export function useEnhancedDrag({
           Math.abs(initialPos.x - cardFinalPos.x) > 1 || 
           Math.abs(initialPos.y - cardFinalPos.y) > 1
         )) {
-          debouncedSave(cardId, cardFinalPos);
+          hasSignificantMovement = true;
+          bulkUpdates.push({
+            id: cardId,
+            canvasX: cardFinalPos.x,
+            canvasY: cardFinalPos.y
+          });
         }
       });
+
+      // Use bulk update if available and there are multiple cards, otherwise use individual updates
+      if (hasSignificantMovement) {
+        if (onBulkDrop && currentState.selectedCards.size > 1) {
+          onBulkDrop(bulkUpdates);
+        } else {
+          // Fallback to individual updates
+          bulkUpdates.forEach(update => {
+            debouncedSave(update.id, { x: update.canvasX, y: update.canvasY });
+          });
+        }
+      }
     }
 
     // Reset drag state but maintain persistent selection
@@ -324,7 +353,7 @@ export function useEnhancedDrag({
       ...initialDragState,
       persistentSelection: prev.persistentSelection
     }));
-  }, [screenToCanvas, debouncedSave]);
+  }, [screenToCanvas, debouncedSave, onBulkDrop]);
 
   // Handle canvas click to clear selection
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
