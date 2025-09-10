@@ -104,15 +104,37 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       const rectTop = Math.min(startY, endY);
       const rectBottom = Math.max(startY, endY);
       
-      return ideas.filter(idea => {
+      console.log('Selection rectangle:', {
+        left: rectLeft,
+        right: rectRight,
+        top: rectTop,
+        bottom: rectBottom,
+        width: rectRight - rectLeft,
+        height: rectBottom - rectTop
+      });
+      
+      const selectedCards = ideas.filter(idea => {
         const cardLeft = (idea.canvasX || 0) * zoom + panOffset.x;
         const cardTop = (idea.canvasY || 0) * zoom + panOffset.y;
         const cardRight = cardLeft + (256 * zoom); // Card width scaled
         const cardBottom = cardTop + (180 * zoom); // Card height scaled
         
-        // Check if rectangles intersect
-        return !(rectRight < cardLeft || rectLeft > cardRight || rectBottom < cardTop || rectTop > cardBottom);
+        // Check if rectangles intersect - improved algorithm
+        const intersects = !(rectRight < cardLeft || rectLeft > cardRight || rectBottom < cardTop || rectTop > cardBottom);
+        
+        if (intersects) {
+          console.log(`Card ${idea.id} intersects:`, {
+            cardBounds: { left: cardLeft, right: cardRight, top: cardTop, bottom: cardBottom },
+            cardTitle: idea.title,
+            intersects: true
+          });
+        }
+        
+        return intersects;
       });
+      
+      console.log(`Found ${selectedCards.length} cards in rectangle`);
+      return selectedCards;
     }, [ideas, zoom, panOffset]);
 
     // Canvas panning handlers
@@ -135,11 +157,12 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       if (e.target === canvasRef.current && e.button === 0) {
         const isModifier = e.ctrlKey || e.metaKey;
         
-        if (isModifier && selectedIdeaIds.size === 0) {
-          // Start rectangle selection
+        if (isModifier) {
+          // Start rectangle selection when modifier is pressed
           setIsSelecting(true);
           setSelectionStart({ x: e.clientX, y: e.clientY });
           setSelectionEnd({ x: e.clientX, y: e.clientY });
+          console.log('Starting rectangle selection at:', { x: e.clientX, y: e.clientY });
           e.preventDefault();
         } else if (!isModifier) {
           // Start panning
@@ -345,6 +368,7 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                 onUpdate={(updates) => onIdeaUpdate(idea.id, updates)}
                 onDelete={() => onIdeaDelete(idea.id)}
                 onExpand={() => handleCardExpand(idea.id)}
+                isModifierPressed={isModifierPressed}
                 onCreateGroup={() => {}} // TODO: Implement group creation
               />
             </div>

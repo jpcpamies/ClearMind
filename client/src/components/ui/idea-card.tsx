@@ -22,6 +22,7 @@ interface IdeaCardProps {
   isDragging: boolean;
   isSelected: boolean;
   isExpanded?: boolean;
+  isModifierPressed?: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
   onTouchStart: (e: React.TouchEvent) => void;
   onEdit: () => void;
@@ -62,6 +63,7 @@ export default function IdeaCard({
   isDragging,
   isSelected,
   isExpanded = false,
+  isModifierPressed = false,
   onMouseDown,
   onTouchStart,
   onEdit,
@@ -158,6 +160,12 @@ export default function IdeaCard({
 
   // Handle card expansion - avoid menu dots, group label, and priority label
   const handleCardClick = (e: React.MouseEvent) => {
+    // Don't expand if modifier key is pressed (for multi-selection)
+    if (isModifierPressed) {
+      console.log('Preventing card expansion - modifier key is pressed');
+      return;
+    }
+    
     // Don't expand if clicking on interactive elements
     const target = e.target as HTMLElement;
     const isInteractiveElement = 
