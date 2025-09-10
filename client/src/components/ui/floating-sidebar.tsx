@@ -165,8 +165,12 @@ export default function FloatingSidebar({
       {/* Collapsed Toggle Button */}
       {isCollapsed && (
         <div 
-          className="fixed top-3 left-3 z-floating"
-          style={{ transition: "all 0.3s ease-in-out" }}
+          className="fixed z-floating"
+          style={{ 
+            top: '14px',
+            left: '14px',
+            transition: "all 0.3s ease-in-out" 
+          }}
         >
           <Button
             onClick={onToggleCollapse}
