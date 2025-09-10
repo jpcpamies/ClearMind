@@ -162,7 +162,6 @@ export default function IdeaCard({
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't expand if modifier key is pressed (for multi-selection)
     if (isModifierPressed) {
-      console.log('Preventing card expansion - modifier key is pressed');
       return;
     }
     

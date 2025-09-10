@@ -162,7 +162,6 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           setIsSelecting(true);
           setSelectionStart({ x: e.clientX, y: e.clientY });
           setSelectionEnd({ x: e.clientX, y: e.clientY });
-          console.log('Starting rectangle selection at:', { x: e.clientX, y: e.clientY });
           e.preventDefault();
         } else if (!isModifier) {
           // Start panning
@@ -199,8 +198,6 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           selectionStart.x, selectionStart.y,
           selectionEnd.x, selectionEnd.y
         );
-        
-        console.log('Finalizing rectangle selection with', selectedCards.length, 'cards');
         
         // Apply final selection - select all cards in the rectangle
         selectedCards.forEach(idea => {
