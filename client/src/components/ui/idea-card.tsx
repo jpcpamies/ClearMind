@@ -266,7 +266,7 @@ export default function IdeaCard({
         </p>
       )}
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-2">
         {/* Group Dropdown */}
         <DropdownMenu open={isGroupDropdownOpen} onOpenChange={setIsGroupDropdownOpen}>
           <DropdownMenuTrigger asChild>
@@ -361,13 +361,18 @@ export default function IdeaCard({
         <DropdownMenu open={isPriorityDropdownOpen} onOpenChange={setIsPriorityDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <span 
-              className="priority-label rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+              className="priority-label rounded-full cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
               style={{
                 fontSize: "12px", 
                 padding: "2px 8px",
                 backgroundColor: tagBgColor,
                 color: tagTextColor,
                 borderRadius: "20px",
+                maxWidth: "80px",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                display: "inline-block",
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -375,6 +380,7 @@ export default function IdeaCard({
                 setIsPriorityDropdownOpen(true);
               }}
               data-testid={`priority-label-${idea.id}`}
+              title={(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
             >
               {(idea.priority || 'medium').charAt(0).toUpperCase() + (idea.priority || 'medium').slice(1)}
             </span>
