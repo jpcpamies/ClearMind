@@ -9,31 +9,15 @@ interface AuthRequest extends Request {
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  // DEMO MODE: Skip authentication and use demo user
-  const demoUser = {
-    id: 'demo-user',
-    email: 'demo@clearmind.app',
-    username: 'demo',
-    displayName: 'Demo User',
-    emailVerified: true,
-    profileImageUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  
-  req.user = demoUser;
-  next();
-  return;
-  
-  // Original auth code commented out for demo
-  /*
   try {
     const authHeader = req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid Authorization header found');
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    console.log('Processing token:', token.substring(0, 20) + '...');
     
     const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
     if (!secret) {
@@ -42,14 +26,17 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
 
     const decoded = jwt.verify(token, secret as jwt.Secret) as { userId: string };
+    console.log('Token decoded successfully for user:', decoded.userId);
     
     // Get user from database
     const [user] = await db.select().from(users).where(eq(users.id, decoded.userId));
     
     if (!user) {
+      console.log('User not found in database:', decoded.userId);
       return res.status(401).json({ message: 'Invalid token. User not found.' });
     }
 
+    console.log('User authenticated successfully:', user.displayName);
     // Remove password hash from user object
     const { passwordHash, ...userWithoutPassword } = user;
     req.user = userWithoutPassword;
@@ -64,5 +51,4 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
     res.status(500).json({ message: 'Internal server error' });
   }
-  */
 };

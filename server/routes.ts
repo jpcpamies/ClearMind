@@ -20,6 +20,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   const authRoutes = await import('./routes/auth');
   app.use('/api/auth', authRoutes.default);
+
+  // User profile endpoint
+  app.get('/api/auth/user', auth, async (req: any, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      console.log('Fetching user profile for:', req.user.displayName);
+      res.json(req.user);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ message: 'Failed to fetch user profile' });
+    }
+  });
   // Ideas routes
   app.get("/api/ideas", auth, async (req: any, res) => {
     try {
