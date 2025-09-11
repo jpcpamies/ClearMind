@@ -21,114 +21,14 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Password validation function
-const validatePassword = (password: string): string | null => {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-
-  if (password.length < minLength) {
-    return 'Password must be at least 8 characters long';
-  }
-  if (!hasUpperCase) {
-    return 'Password must contain at least one uppercase letter';
-  }
-  if (!hasLowerCase) {
-    return 'Password must contain at least one lowercase letter';
-  }
-  if (!hasNumbers) {
-    return 'Password must contain at least one number';
-  }
-  return null;
-};
-
 // Generate JWT token
 const generateToken = (userId: string): string => {
-  const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-  return jwt.sign(
-    { userId },
-    secret as jwt.Secret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-  );
-};
-
-// Register endpoint
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, displayName } = req.body;
-
-    // Validate required fields
-    if (!email || !password || !displayName) {
-      return res.status(400).json({
-        error: 'Email, password, and display name are required',
-      });
-    }
-
-    // Validate email
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        error: 'Please provide a valid email address',
-      });
-    }
-
-    // Validate password
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      return res.status(400).json({
-        error: passwordError,
-      });
-    }
-
-    // Check if user already exists
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
-
-    if (existingUser) {
-      return res.status(400).json({
-        error: 'User with this email already exists',
-      });
-    }
-
-    // Generate username from email
-    const username = email.split('@')[0];
-
-    // Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Create user
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        passwordHash,
-        username,
-        displayName,
-        emailVerified: false,
-      })
-      .returning();
-
-    // Generate token
-    const token = generateToken(newUser.id);
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = newUser;
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: userWithoutPassword,
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-    });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET not configured');
   }
-});
+  return jwt.sign({ userId }, secret, { expiresIn: '7d' });
+};
 
 // Login endpoint
 router.post('/login', loginLimiter, async (req, res) => {

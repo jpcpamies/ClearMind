@@ -9,24 +9,6 @@ interface AuthRequest extends Request {
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  // DEMO MODE: Skip authentication and use demo user
-  const demoUser = {
-    id: 'demo-user',
-    email: 'demo@clearmind.app',
-    username: 'demo',
-    displayName: 'Demo User',
-    emailVerified: true,
-    profileImageUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  
-  req.user = demoUser;
-  next();
-  return;
-  
-  // Original auth code commented out for demo
-  /*
   try {
     const authHeader = req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -35,7 +17,7 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
-    const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
       console.error('JWT_SECRET not configured');
       return res.status(500).json({ message: 'Internal server error' });
@@ -64,5 +46,4 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
     res.status(500).json({ message: 'Internal server error' });
   }
-  */
 };
