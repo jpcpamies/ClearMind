@@ -111,7 +111,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login endpoint - simplified for testing
+// Login endpoint
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -130,32 +130,37 @@ router.post('/login', loginLimiter, async (req, res) => {
       });
     }
 
-    // For testing purposes, accept test@example.com with password TestPassword123
-    if (email.toLowerCase() === 'test@example.com' && password === 'TestPassword123') {
-      const mockUser = {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        username: 'test',
-        displayName: 'Test User',
-        emailVerified: true,
-        profileImageUrl: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+    // Find user by email in PostgreSQL database
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()));
 
-      // Generate token
-      const token = generateToken(mockUser.id);
-
-      res.json({
-        message: 'Login successful',
-        token,
-        user: mockUser,
-      });
-    } else {
+    if (!user) {
       return res.status(401).json({
         error: 'Invalid email or password',
       });
     }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        error: 'Invalid email or password',
+      });
+    }
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    // Remove password hash from response
+    const { passwordHash: _, ...userWithoutPassword } = user;
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: userWithoutPassword,
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
