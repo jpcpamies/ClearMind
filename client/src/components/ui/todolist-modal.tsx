@@ -31,7 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Group, Idea, TodoSection } from "@shared/schema";
-import { testSectionCreation } from "@/utils/sectionDebugger";
 
 interface TodoListModalProps {
   isOpen: boolean;
@@ -79,7 +78,7 @@ export default function TodoListModal({
 
   // Fetch todo sections for this group
   const { data: todoSections = [] } = useQuery<TodoSection[]>({
-    queryKey: ["/api/groups", groupId, "sections"],
+    queryKey: ["/api/groups", groupId, "todo-sections"],
     enabled: !!groupId,
   });
 
@@ -107,46 +106,24 @@ export default function TodoListModal({
     },
   });
 
-  // Create section mutation using safe endpoint
+  // Create section mutation
   const createSectionMutation = useMutation({
     mutationFn: async (sectionData: any) => {
-      console.log('Frontend - Creating section with safe endpoint:', sectionData);
-      
-      const response = await fetch(`/api/groups/${groupId}/sections-safe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: sectionData.name })
-      });
-      
-      console.log('Frontend - Safe endpoint response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Frontend - Safe endpoint error response:', errorData);
-        throw new Error(errorData.error || `Failed to create section: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('Frontend - Section created via safe endpoint:', result);
-      return result;
+      const response = await apiRequest("POST", "/api/todo-sections", sectionData);
+      return response.json();
     },
-    onSuccess: (newSection) => {
-      console.log('Frontend - Section creation success:', newSection);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "todo-sections"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "sections"] });
       setNewSectionName("");
       toast({
         title: "Success",
         description: "Section created successfully",
       });
     },
-    onError: (error) => {
-      console.error('Frontend - Section creation error:', error);
+    onError: () => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create section",
+        description: "Failed to create section",
         variant: "destructive",
       });
     },
@@ -198,41 +175,11 @@ export default function TodoListModal({
   const handleCreateSection = () => {
     if (!newSectionName.trim() || !groupId) return;
 
-    console.log('Frontend - handleCreateSection called with:', {
-      groupId,
-      sectionName: newSectionName,
-      currentSectionsCount: todoSections.length
-    });
-
     createSectionMutation.mutate({
       groupId,
       name: newSectionName,
       order: todoSections.length,
     });
-  };
-
-  // Debug function for testing section creation
-  const testSectionCreationDebug = async () => {
-    if (!groupId) {
-      console.error('No groupId available for testing');
-      return;
-    }
-    
-    try {
-      const result = await testSectionCreation(groupId, 'Debug Test Section');
-      console.log('Debug test completed successfully:', result);
-      toast({
-        title: "Debug Success",
-        description: "Section creation test passed",
-      });
-    } catch (error) {
-      console.error('Debug test failed:', error);
-      toast({
-        title: "Debug Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleTaskToggle = (ideaId: string, completed: boolean) => {

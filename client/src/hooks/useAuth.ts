@@ -5,10 +5,22 @@ import type { User, AuthState, LoginRequest, RegisterRequest, AuthResponse } fro
 const TOKEN_KEY = 'clearmind_token';
 
 export function useAuth() {
+  // DEMO MODE: Skip authentication
+  const demoUser: User = {
+    id: 'demo-user',
+    email: 'demo@clearmind.app',
+    username: 'demo',
+    displayName: 'Demo User',
+    emailVerified: true,
+    profileImageUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: null,
-    loading: true,
+    user: demoUser,  // Set demo user by default
+    token: 'demo-token',
+    loading: false,   // No loading needed for demo
     error: null,
   });
 
@@ -31,65 +43,12 @@ export function useAuth() {
   };
 
   const checkAuth = useCallback(async () => {
-    console.log('Checking authentication...');
-    const token = localStorage.getItem(TOKEN_KEY);
-    
-    if (!token) {
-      console.log('No token found in localStorage');
-      setAuthState({
-        user: null,
-        token: null,
-        loading: false,
-        error: null,
-      });
-      return;
-    }
-
-    try {
-      console.log('Fetching user profile with token');
-      const response = await fetch('/api/auth/user', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.log('Token validation failed:', response.status);
-        localStorage.removeItem(TOKEN_KEY);
-        setAuthState({
-          user: null,
-          token: null,
-          loading: false,
-          error: null,
-        });
-        return;
-      }
-
-      const user: User = await response.json();
-      console.log('User authenticated successfully:', user.displayName);
-      setAuthState({
-        user,
-        token,
-        loading: false,
-        error: null,
-      });
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem(TOKEN_KEY);
-      setAuthState({
-        user: null,
-        token: null,
-        loading: false,
-        error: null,
-      });
-    }
+    // DEMO MODE: Always authenticated
+    return;
   }, []);
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
-    console.log('Attempting login for:', credentials.email);
     
     try {
       const response = await fetch('/api/auth/login', {
@@ -106,12 +65,11 @@ export function useAuth() {
       }
       
       const data: AuthResponse = await response.json();
-      console.log('Login successful for:', data.user.displayName);
       setUser(data.user, data.token);
       
-      // No page reload - let React handle state update
+      // Force page reload to trigger auth check
+      window.location.reload();
     } catch (error) {
-      console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
       throw error;
     }
@@ -119,7 +77,6 @@ export function useAuth() {
 
   const register = async (userData: RegisterRequest): Promise<void> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
-    console.log('Attempting registration for:', userData.email);
     
     try {
       const response = await fetch('/api/auth/register', {
@@ -136,46 +93,21 @@ export function useAuth() {
       }
       
       const data: AuthResponse = await response.json();
-      console.log('Registration successful for:', data.user.displayName);
       setUser(data.user, data.token);
       
-      // No page reload - let React handle state update
+      // Force page reload to trigger auth check
+      window.location.reload();
     } catch (error) {
-      console.error('Registration error:', error);
       setError(error instanceof Error ? error.message : 'Registration failed');
       throw error;
     }
   };
 
   const logout = useCallback(async () => {
-    console.log('Logging out user');
-    
-    try {
-      // Call logout endpoint if available
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-        },
-      });
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-      // Continue with client-side logout even if API fails
-    }
-    
-    // Clear local state and token
-    localStorage.removeItem(TOKEN_KEY);
-    setAuthState({
-      user: null,
-      token: null,
-      loading: false,
-      error: null,
-    });
-    
-    console.log('User logged out successfully');
-  }, [authState.token]);
+    // DEMO MODE: Logout just refreshes the page
+    window.location.reload();
+  }, []);
 
-  // Check authentication on mount
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -185,7 +117,7 @@ export function useAuth() {
     token: authState.token,
     loading: authState.loading,
     error: authState.error,
-    isAuthenticated: !!authState.user && !!authState.token,
+    isAuthenticated: true,  // DEMO MODE: Always authenticated
     login,
     register,
     logout,

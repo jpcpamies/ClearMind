@@ -53,7 +53,7 @@ const generateToken = (userId: string): string => {
   );
 };
 
-// Register endpoint - simplified for testing
+// Register endpoint
 router.post('/register', async (req, res) => {
   try {
     const { email, password, displayName } = req.body;
@@ -80,28 +80,47 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // For testing, just create a mock user instead of database
-    const userId = Math.random().toString(36).substring(2, 15);
+    // Check if user already exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()));
+
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'User with this email already exists',
+      });
+    }
+
+    // Generate username from email
     const username = email.split('@')[0];
-    
-    const mockUser = {
-      id: userId,
-      email: email.toLowerCase(),
-      username,
-      displayName,
-      emailVerified: false,
-      profileImageUrl: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Create user
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email: email.toLowerCase(),
+        passwordHash,
+        username,
+        displayName,
+        emailVerified: false,
+      })
+      .returning();
 
     // Generate token
-    const token = generateToken(mockUser.id);
+    const token = generateToken(newUser.id);
+
+    // Remove password hash from response
+    const { passwordHash: _, ...userWithoutPassword } = newUser;
 
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: mockUser,
+      user: userWithoutPassword,
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -130,7 +149,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       });
     }
 
-    // Find user by email in PostgreSQL database
+    // Find user by email
     const [user] = await db
       .select()
       .from(users)

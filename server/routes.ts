@@ -1,40 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema, updateTodoSectionSchema, reorderSectionsSchema, createSectionInGroupSchema } from "@shared/schema";
+import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema } from "@shared/schema";
 import { auth } from "./middleware/auth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // User validation middleware for debugging
-  app.use('/api', (req: any, res, next) => {
-    // Log user authentication for debugging
-    if (req.user) {
-      console.log('Authenticated user:', req.user.id);
-    } else {
-      console.log('No authenticated user found');
-    }
-    next();
-  });
   // Authentication routes
   const authRoutes = await import('./routes/auth');
   app.use('/api/auth', authRoutes.default);
-
-  // User profile endpoint
-  app.get('/api/auth/user', auth, async (req: any, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: 'User not authenticated' });
-      }
-      
-      console.log('Fetching user profile for:', req.user.displayName);
-      res.json(req.user);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      res.status(500).json({ message: 'Failed to fetch user profile' });
-    }
-  });
   // Ideas routes
   app.get("/api/ideas", auth, async (req: any, res) => {
     try {
@@ -198,18 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TodoSections routes - unified naming
-  app.get("/api/groups/:groupId/sections", auth, async (req: any, res) => {
-    try {
-      const sections = await storage.getTodoSectionsByGroup(req.params.groupId, req.user.id);
-      res.json(sections);
-    } catch (error) {
-      console.error("Error fetching sections:", error);
-      res.status(500).json({ message: "Failed to fetch sections" });
-    }
-  });
-
-  // Backward compatibility alias
+  // TodoSections routes
   app.get("/api/groups/:groupId/todo-sections", auth, async (req: any, res) => {
     try {
       const sections = await storage.getTodoSectionsByGroup(req.params.groupId, req.user.id);
@@ -220,175 +183,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create section within a group
-  app.post("/api/groups/:groupId/sections", auth, async (req: any, res) => {
+  app.post("/api/todo-sections", auth, async (req: any, res) => {
     try {
-      const validatedData = createSectionInGroupSchema.parse(req.body);
-      const groupId = req.params.groupId;
+      const validatedData = insertTodoSectionSchema.parse(req.body);
       
       // Verify the group belongs to the authenticated user
-      const group = await storage.getGroup(groupId, req.user.id);
+      const group = await storage.getGroup(validatedData.groupId, req.user.id);
       if (!group) {
         return res.status(403).json({ message: "Access denied: Group not found or not owned by user" });
       }
       
-      const section = await storage.createTodoSection({...validatedData, groupId, userId: req.user.id});
+      const section = await storage.createTodoSection({...validatedData, userId: req.user.id});
       res.status(201).json(section);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      console.error("Error creating section:", error);
-      res.status(500).json({ message: "Failed to create section" });
-    }
-  });
-
-  // Update section name
-  app.put("/api/sections/:sectionId", auth, async (req: any, res) => {
-    try {
-      const validatedData = updateTodoSectionSchema.parse(req.body);
-      const sectionId = req.params.sectionId;
-      
-      const updatedSection = await storage.updateTodoSection(sectionId, validatedData, req.user.id);
-      
-      if (!updatedSection) {
-        return res.status(404).json({ message: "Section not found" });
-      }
-      
-      res.json(updatedSection);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      console.error("Error updating section:", error);
-      res.status(500).json({ message: "Failed to update section" });
-    }
-  });
-
-  // Reorder sections within a group
-  app.put("/api/groups/:groupId/sections/reorder", auth, async (req: any, res) => {
-    try {
-      const validatedData = reorderSectionsSchema.parse(req.body);
-      const groupId = req.params.groupId;
-      
-      // Verify the group belongs to the authenticated user
-      const group = await storage.getGroup(groupId, req.user.id);
-      if (!group) {
-        return res.status(403).json({ message: "Access denied: Group not found or not owned by user" });
-      }
-      
-      const success = await storage.reorderSections(groupId, validatedData.sectionIds, req.user.id);
-      
-      if (!success) {
-        return res.status(400).json({ message: "Failed to reorder sections. Some section IDs may not belong to this group." });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      console.error("Error reordering sections:", error);
-      res.status(500).json({ message: "Failed to reorder sections" });
-    }
-  });
-
-  // Delete section
-  app.delete("/api/sections/:sectionId", auth, async (req: any, res) => {
-    try {
-      const sectionId = req.params.sectionId;
-      
-      const deleted = await storage.deleteTodoSection(sectionId, req.user.id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Section not found" });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting section:", error);
-      res.status(500).json({ message: "Failed to delete section" });
-    }
-  });
-
-  // Safe section creation endpoint with user validation
-  app.post("/api/groups/:groupId/sections-safe", auth, async (req: any, res) => {
-    try {
-      const { groupId } = req.params;
-      const { name } = req.body;
-      let userId = req.user?.id;
-      
-      console.log('Section creation attempt:', { groupId, name, userId });
-      
-      // Fallback to a real user if demo-user is being sent
-      if (!userId || userId === 'demo-user') {
-        // Use real user ID as fallback
-        userId = 'faf99abd-3583-4764-90fe-05af5b649f0a';
-        console.log('Using fallback user ID:', userId);
-      }
-      
-      // Verify user exists
-      const userExists = await storage.getIdea('dummy', userId); // This will fail gracefully if user doesn't exist
-      const group = await storage.getGroup(groupId, userId);
-      if (!group) {
-        return res.status(403).json({ error: 'Group not found or access denied' });
-      }
-      
-      // Create section using our storage layer
-      const newSection = await storage.createTodoSection({
-        name,
-        groupId,
-        userId
-      });
-      
-      console.log('Section created successfully:', newSection);
-      res.status(201).json(newSection);
-      
-    } catch (error) {
-      console.error('Error creating section (safe endpoint):', error);
-      res.status(500).json({ 
-        error: 'Failed to create section', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Debug route for section creation troubleshooting
-  app.post("/api/debug/sections", auth, async (req: any, res) => {
-    try {
-      console.log('Debug - Request body:', req.body);
-      console.log('Debug - User ID:', req.user.id);
-      console.log('Debug - Headers:', req.headers);
-      
-      // Get all user's sections across all groups for debugging
-      const allGroups = await storage.getAllGroups(req.user.id);
-      let totalSections = 0;
-      const groupSectionCounts: Record<string, number> = {};
-      
-      for (const group of allGroups) {
-        const sections = await storage.getTodoSectionsByGroup(group.id, req.user.id);
-        groupSectionCounts[group.name] = sections.length;
-        totalSections += sections.length;
-      }
-      
-      console.log('Debug - User total sections count:', totalSections);
-      console.log('Debug - Group section breakdown:', groupSectionCounts);
-      
-      res.json({ 
-        success: true, 
-        requestBody: req.body,
-        userId: req.user.id,
-        totalSectionsCount: totalSections,
-        groupSectionCounts,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Debug error:', error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
+      console.error("Error creating todo section:", error);
+      res.status(500).json({ message: "Failed to create todo section" });
     }
   });
 
