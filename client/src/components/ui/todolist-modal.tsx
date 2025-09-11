@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Group, Idea, TodoSection } from "@shared/schema";
+import { testSectionCreation } from "@/utils/sectionDebugger";
 
 interface TodoListModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export default function TodoListModal({
 
   // Fetch todo sections for this group
   const { data: todoSections = [] } = useQuery<TodoSection[]>({
-    queryKey: ["/api/groups", groupId, "todo-sections"],
+    queryKey: ["/api/groups", groupId, "sections"],
     enabled: !!groupId,
   });
 
@@ -109,21 +110,38 @@ export default function TodoListModal({
   // Create section mutation
   const createSectionMutation = useMutation({
     mutationFn: async (sectionData: any) => {
-      const response = await apiRequest("POST", "/api/todo-sections", sectionData);
-      return response.json();
+      console.log('Frontend - Creating section:', sectionData);
+      const response = await apiRequest("POST", `/api/groups/${groupId}/sections`, {
+        name: sectionData.name,
+        order: sectionData.order
+      });
+      console.log('Frontend - Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Frontend - Error response:', errorText);
+        throw new Error(`Failed to create section: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('Frontend - Created section:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (newSection) => {
+      console.log('Frontend - Section creation success:', newSection);
       queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "todo-sections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "sections"] });
       setNewSectionName("");
       toast({
         title: "Success",
         description: "Section created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Frontend - Section creation error:', error);
       toast({
         title: "Error",
-        description: "Failed to create section",
+        description: error instanceof Error ? error.message : "Failed to create section",
         variant: "destructive",
       });
     },
@@ -175,11 +193,41 @@ export default function TodoListModal({
   const handleCreateSection = () => {
     if (!newSectionName.trim() || !groupId) return;
 
+    console.log('Frontend - handleCreateSection called with:', {
+      groupId,
+      sectionName: newSectionName,
+      currentSectionsCount: todoSections.length
+    });
+
     createSectionMutation.mutate({
       groupId,
       name: newSectionName,
       order: todoSections.length,
     });
+  };
+
+  // Debug function for testing section creation
+  const testSectionCreationDebug = async () => {
+    if (!groupId) {
+      console.error('No groupId available for testing');
+      return;
+    }
+    
+    try {
+      const result = await testSectionCreation(groupId, 'Debug Test Section');
+      console.log('Debug test completed successfully:', result);
+      toast({
+        title: "Debug Success",
+        description: "Section creation test passed",
+      });
+    } catch (error) {
+      console.error('Debug test failed:', error);
+      toast({
+        title: "Debug Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTaskToggle = (ideaId: string, completed: boolean) => {

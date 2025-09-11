@@ -1,0 +1,91 @@
+// Phase 9 Step 3: Debug section creation and create frontend integration
+
+// FIRST: Add debugging route to check what's happening
+app.post('/api/debug/sections', authenticateToken, async (req, res) => {
+  try {
+    console.log('Debug - Request body:', req.body);
+    console.log('Debug - User ID:', req.user.id);
+    console.log('Debug - Headers:', req.headers);
+    
+    // Test database connection
+    const testQuery = await pool.query('SELECT COUNT(*) FROM todo_sections');
+    console.log('Debug - DB connection works, sections count:', testQuery.rows[0].count);
+    
+    res.json({ 
+      success: true, 
+      requestBody: req.body,
+      userId: req.user.id,
+      sectionsCount: testQuery.rows[0].count 
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+// SECOND: Find and update your existing section creation frontend code
+// Look for files like TodoList.jsx, TodoModal.jsx, or similar component
+// Replace the existing section creation function with this:
+
+const createSection = async (groupId, sectionName) => {
+  try {
+    console.log('Frontend - Creating section:', { groupId, sectionName });
+    
+    const response = await fetch(`/api/groups/${groupId}/sections`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}` // Adjust based on your auth method
+      },
+      body: JSON.stringify({ name: sectionName })
+    });
+    
+    console.log('Frontend - Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Frontend - Error response:', errorData);
+      throw new Error(`Failed to create section: ${response.status}`);
+    }
+    
+    const newSection = await response.json();
+    console.log('Frontend - Created section:', newSection);
+    
+    // Update your state/UI here
+    // Example: setSections(prev => [...prev, newSection]);
+    
+    return newSection;
+  } catch (error) {
+    console.error('Frontend - Create section error:', error);
+    throw error;
+  }
+};
+
+// THIRD: Add this to your component that displays the section creation form
+// Replace your existing section creation button/form handler:
+
+const handleCreateSection = async (e) => {
+  e.preventDefault();
+  
+  const sectionName = e.target.sectionName.value; // Adjust based on your form structure
+  const currentGroupId = /* your current group ID variable */;
+  
+  try {
+    await createSection(currentGroupId, sectionName);
+    // Clear form
+    e.target.reset();
+    // Show success message
+    console.log('Section created successfully');
+  } catch (error) {
+    // Show error message to user
+    console.error('Failed to create section:', error.message);
+  }
+};
+
+// FOURTH: Test API with curl command (run in Replit shell):
+// curl -X POST http://localhost:3000/api/debug/sections \
+//   -H "Content-Type: application/json" \
+//   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+//   -d '{"test": "data"}'
+
+console.log('Section creation debugging and frontend integration added');

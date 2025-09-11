@@ -285,6 +285,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug route for section creation troubleshooting
+  app.post("/api/debug/sections", auth, async (req: any, res) => {
+    try {
+      console.log('Debug - Request body:', req.body);
+      console.log('Debug - User ID:', req.user.id);
+      console.log('Debug - Headers:', req.headers);
+      
+      // Get all user's sections across all groups for debugging
+      const allGroups = await storage.getAllGroups(req.user.id);
+      let totalSections = 0;
+      const groupSectionCounts: Record<string, number> = {};
+      
+      for (const group of allGroups) {
+        const sections = await storage.getTodoSectionsByGroup(group.id, req.user.id);
+        groupSectionCounts[group.name] = sections.length;
+        totalSections += sections.length;
+      }
+      
+      console.log('Debug - User total sections count:', totalSections);
+      console.log('Debug - Group section breakdown:', groupSectionCounts);
+      
+      res.json({ 
+        success: true, 
+        requestBody: req.body,
+        userId: req.user.id,
+        totalSectionsCount: totalSections,
+        groupSectionCounts,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Debug error:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Utility routes
   app.get("/api/ideas/unassigned", auth, async (req: any, res) => {
     try {
