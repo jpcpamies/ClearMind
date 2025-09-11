@@ -6,9 +6,13 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, token } = useAuth();
+
+  // Debug authentication state
+  console.log('ProtectedRoute - Auth state:', { isAuthenticated, loading, user: user?.displayName, hasToken: !!token });
 
   if (loading) {
+    console.log('ProtectedRoute - Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -20,8 +24,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute - User not authenticated, showing AuthLayout');
     return <AuthLayout />;
   }
 
+  console.log('ProtectedRoute - User authenticated, showing main app for:', user?.displayName);
   return <>{children}</>;
 }
