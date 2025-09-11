@@ -107,24 +107,29 @@ export default function TodoListModal({
     },
   });
 
-  // Create section mutation
+  // Create section mutation using safe endpoint
   const createSectionMutation = useMutation({
     mutationFn: async (sectionData: any) => {
-      console.log('Frontend - Creating section:', sectionData);
-      const response = await apiRequest("POST", `/api/groups/${groupId}/sections`, {
-        name: sectionData.name,
-        order: sectionData.order
+      console.log('Frontend - Creating section with safe endpoint:', sectionData);
+      
+      const response = await fetch(`/api/groups/${groupId}/sections-safe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: sectionData.name })
       });
-      console.log('Frontend - Response status:', response.status);
+      
+      console.log('Frontend - Safe endpoint response status:', response.status);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Frontend - Error response:', errorText);
-        throw new Error(`Failed to create section: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Frontend - Safe endpoint error response:', errorData);
+        throw new Error(errorData.error || `Failed to create section: ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('Frontend - Created section:', result);
+      console.log('Frontend - Section created via safe endpoint:', result);
       return result;
     },
     onSuccess: (newSection) => {

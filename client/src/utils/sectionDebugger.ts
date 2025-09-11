@@ -1,11 +1,12 @@
 // Section Creation Debugging Utilities
 
-// Test section creation API endpoint
-export const testSectionCreation = async (groupId: string, sectionName: string) => {
+// Test section creation API endpoint with safe fallback
+export const testSectionCreation = async (groupId: string, sectionName: string, useSafeEndpoint = true) => {
   try {
-    console.log('Frontend - Testing section creation:', { groupId, sectionName });
+    console.log('Frontend - Testing section creation:', { groupId, sectionName, useSafeEndpoint });
     
-    const response = await fetch(`/api/groups/${groupId}/sections`, {
+    const endpoint = useSafeEndpoint ? `/api/groups/${groupId}/sections-safe` : `/api/groups/${groupId}/sections`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,6 +89,37 @@ export const getSectionsForGroup = async (groupId: string) => {
   }
 };
 
+// Test user authentication status
+export const testUserAuth = async () => {
+  try {
+    console.log('Frontend - Testing user authentication status');
+    
+    const response = await fetch('/api/debug/sections', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ authTest: true })
+    });
+    
+    console.log('Frontend - Auth test response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Frontend - Auth test error:', errorData);
+      throw new Error(`Auth test failed: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('Frontend - Auth test result:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('Frontend - Auth test error:', error);
+    throw error;
+  }
+};
+
 // Make these functions available globally for testing in browser console
 declare global {
   interface Window {
@@ -95,6 +127,7 @@ declare global {
       testSectionCreation: typeof testSectionCreation;
       testDebugEndpoint: typeof testDebugEndpoint;
       getSectionsForGroup: typeof getSectionsForGroup;
+      testUserAuth: typeof testUserAuth;
     };
   }
 }
@@ -104,5 +137,6 @@ if (typeof window !== 'undefined') {
     testSectionCreation,
     testDebugEndpoint,
     getSectionsForGroup,
+    testUserAuth,
   };
 }
