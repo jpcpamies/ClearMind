@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema } from "@shared/schema";
+import { insertIdeaSchema, insertGroupSchema, insertTodoSectionSchema, updateTodoSectionSchema, reorderSectionsSchema, createSectionInGroupSchema } from "@shared/schema";
 import { auth } from "./middleware/auth";
 import { z } from "zod";
 
@@ -172,7 +172,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TodoSections routes
+  // TodoSections routes - unified naming
+  app.get("/api/groups/:groupId/sections", auth, async (req: any, res) => {
+    try {
+      const sections = await storage.getTodoSectionsByGroup(req.params.groupId, req.user.id);
+      res.json(sections);
+    } catch (error) {
+      console.error("Error fetching sections:", error);
+      res.status(500).json({ message: "Failed to fetch sections" });
+    }
+  });
+
+  // Backward compatibility alias
   app.get("/api/groups/:groupId/todo-sections", auth, async (req: any, res) => {
     try {
       const sections = await storage.getTodoSectionsByGroup(req.params.groupId, req.user.id);
@@ -183,24 +194,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/todo-sections", auth, async (req: any, res) => {
+  // Create section within a group
+  app.post("/api/groups/:groupId/sections", auth, async (req: any, res) => {
     try {
-      const validatedData = insertTodoSectionSchema.parse(req.body);
+      const validatedData = createSectionInGroupSchema.parse(req.body);
+      const groupId = req.params.groupId;
       
       // Verify the group belongs to the authenticated user
-      const group = await storage.getGroup(validatedData.groupId, req.user.id);
+      const group = await storage.getGroup(groupId, req.user.id);
       if (!group) {
         return res.status(403).json({ message: "Access denied: Group not found or not owned by user" });
       }
       
-      const section = await storage.createTodoSection({...validatedData, userId: req.user.id});
+      const section = await storage.createTodoSection({...validatedData, groupId, userId: req.user.id});
       res.status(201).json(section);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      console.error("Error creating todo section:", error);
-      res.status(500).json({ message: "Failed to create todo section" });
+      console.error("Error creating section:", error);
+      res.status(500).json({ message: "Failed to create section" });
+    }
+  });
+
+  // Update section name
+  app.put("/api/sections/:sectionId", auth, async (req: any, res) => {
+    try {
+      const validatedData = updateTodoSectionSchema.parse(req.body);
+      const sectionId = req.params.sectionId;
+      
+      const updatedSection = await storage.updateTodoSection(sectionId, validatedData, req.user.id);
+      
+      if (!updatedSection) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      
+      res.json(updatedSection);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating section:", error);
+      res.status(500).json({ message: "Failed to update section" });
+    }
+  });
+
+  // Reorder sections within a group
+  app.put("/api/groups/:groupId/sections/reorder", auth, async (req: any, res) => {
+    try {
+      const validatedData = reorderSectionsSchema.parse(req.body);
+      const groupId = req.params.groupId;
+      
+      // Verify the group belongs to the authenticated user
+      const group = await storage.getGroup(groupId, req.user.id);
+      if (!group) {
+        return res.status(403).json({ message: "Access denied: Group not found or not owned by user" });
+      }
+      
+      const success = await storage.reorderSections(groupId, validatedData.sectionIds, req.user.id);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Failed to reorder sections. Some section IDs may not belong to this group." });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error reordering sections:", error);
+      res.status(500).json({ message: "Failed to reorder sections" });
+    }
+  });
+
+  // Delete section
+  app.delete("/api/sections/:sectionId", auth, async (req: any, res) => {
+    try {
+      const sectionId = req.params.sectionId;
+      
+      const deleted = await storage.deleteTodoSection(sectionId, req.user.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting section:", error);
+      res.status(500).json({ message: "Failed to delete section" });
     }
   });
 

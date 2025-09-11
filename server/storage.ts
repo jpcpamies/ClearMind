@@ -10,7 +10,7 @@ import {
   type InsertTodoSection,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, isNull, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Ideas operations
@@ -30,8 +30,10 @@ export interface IStorage {
   // TodoSections operations
   getTodoSectionsByGroup(groupId: string, userId: string): Promise<TodoSection[]>;
   createTodoSection(section: InsertTodoSection & { userId: string }): Promise<TodoSection>;
-  updateTodoSection(id: string, updates: Partial<InsertTodoSection>): Promise<TodoSection>;
-  deleteTodoSection(id: string): Promise<void>;
+  updateTodoSection(id: string, updates: Partial<InsertTodoSection>, userId: string): Promise<TodoSection | null>;
+  deleteTodoSection(id: string, userId: string): Promise<boolean>;
+  reorderSections(groupId: string, sectionIds: string[], userId: string): Promise<boolean>;
+  getNextSectionOrder(groupId: string, userId: string): Promise<number>;
 
   // Complex queries
   getIdeasByGroup(groupId: string, userId: string): Promise<Idea[]>;
@@ -124,6 +126,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTodoSection(section: InsertTodoSection & { userId: string }): Promise<TodoSection> {
+    // Auto-assign next order if not provided
+    if (!section.order) {
+      section.order = await this.getNextSectionOrder(section.groupId, section.userId);
+    }
+    
     const [newSection] = await db
       .insert(todoSections)
       .values(section)
@@ -131,17 +138,62 @@ export class DatabaseStorage implements IStorage {
     return newSection;
   }
 
-  async updateTodoSection(id: string, updates: Partial<InsertTodoSection>): Promise<TodoSection> {
+  async updateTodoSection(id: string, updates: Partial<InsertTodoSection>, userId: string): Promise<TodoSection | null> {
     const [updatedSection] = await db
       .update(todoSections)
       .set(updates)
-      .where(eq(todoSections.id, id))
+      .where(and(eq(todoSections.id, id), eq(todoSections.userId, userId)))
       .returning();
-    return updatedSection;
+    return updatedSection || null;
   }
 
-  async deleteTodoSection(id: string): Promise<void> {
-    await db.delete(todoSections).where(eq(todoSections.id, id));
+  async deleteTodoSection(id: string, userId: string): Promise<boolean> {
+    // First, unassign ideas from this section
+    await db.update(ideas).set({ sectionId: null, taskOrder: null }).where(and(eq(ideas.sectionId, id), eq(ideas.userId, userId)));
+    
+    // Delete the section
+    const result = await db.delete(todoSections).where(and(eq(todoSections.id, id), eq(todoSections.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async reorderSections(groupId: string, sectionIds: string[], userId: string): Promise<boolean> {
+    try {
+      // Use a proper transaction for atomic updates
+      return await db.transaction(async (tx) => {
+        let affectedRows = 0;
+        
+        for (let i = 0; i < sectionIds.length; i++) {
+          const result = await tx
+            .update(todoSections)
+            .set({ order: i + 1 })
+            .where(and(
+              eq(todoSections.id, sectionIds[i]),
+              eq(todoSections.groupId, groupId),
+              eq(todoSections.userId, userId)
+            ));
+          affectedRows += result.rowCount || 0;
+        }
+        
+        // Verify all sections were updated (belong to user/group)
+        if (affectedRows !== sectionIds.length) {
+          throw new Error(`Only ${affectedRows} of ${sectionIds.length} sections were updated`);
+        }
+        
+        return true;
+      });
+    } catch (error) {
+      console.error('Error reordering sections:', error);
+      return false;
+    }
+  }
+
+  async getNextSectionOrder(groupId: string, userId: string): Promise<number> {
+    const result = await db
+      .select({ maxOrder: sql<number>`COALESCE(MAX(${todoSections.order}), 0) + 1` })
+      .from(todoSections)
+      .where(and(eq(todoSections.groupId, groupId), eq(todoSections.userId, userId)));
+    
+    return result[0]?.maxOrder || 1;
   }
 
   // Complex queries

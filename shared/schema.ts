@@ -112,6 +112,13 @@ export const insertTodoSectionSchema = createInsertSchema(todoSections).omit({
   createdAt: true,
 });
 
+// Validation schemas for partial updates
+export const updateTodoSectionSchema = insertTodoSectionSchema.pick({ name: true });
+export const createSectionInGroupSchema = insertTodoSectionSchema.omit({ groupId: true });
+export const reorderSectionsSchema = z.object({
+  sectionIds: z.array(z.string().min(1)).min(1),
+});
+
 // User storage table for email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
