@@ -14,6 +14,8 @@ export const ideas = pgTable("ideas", {
   canvasX: real("canvas_x").default(0),
   canvasY: real("canvas_y").default(0),
   completed: boolean("completed").default(false),
+  sectionId: varchar("section_id"), // Reference to todo_sections table for task organization
+  taskOrder: integer("task_order"), // Order within a todo section
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -49,13 +51,18 @@ export const ideasRelations = relations(ideas, ({ one }) => ({
     fields: [ideas.groupId],
     references: [groups.id],
   }),
+  section: one(todoSections, {
+    fields: [ideas.sectionId],
+    references: [todoSections.id],
+  }),
 }));
 
-export const todoSectionsRelations = relations(todoSections, ({ one }) => ({
+export const todoSectionsRelations = relations(todoSections, ({ one, many }) => ({
   group: one(groups, {
     fields: [todoSections.groupId],
     references: [groups.id],
   }),
+  ideas: many(ideas),
 }));
 
 // Insert schemas
@@ -69,6 +76,8 @@ export const insertIdeaSchema = createInsertSchema(ideas).omit({
   canvasY: z.number().optional(),
   completed: z.boolean().optional(),
   groupId: z.string().optional(),
+  sectionId: z.string().optional(),
+  taskOrder: z.number().optional(),
 });
 
 export const insertGroupSchema = createInsertSchema(groups).omit({
@@ -99,6 +108,7 @@ export const insertGroupSchema = createInsertSchema(groups).omit({
 
 export const insertTodoSectionSchema = createInsertSchema(todoSections).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 

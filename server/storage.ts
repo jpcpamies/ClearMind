@@ -29,7 +29,7 @@ export interface IStorage {
 
   // TodoSections operations
   getTodoSectionsByGroup(groupId: string, userId: string): Promise<TodoSection[]>;
-  createTodoSection(section: InsertTodoSection): Promise<TodoSection>;
+  createTodoSection(section: InsertTodoSection & { userId: string }): Promise<TodoSection>;
   updateTodoSection(id: string, updates: Partial<InsertTodoSection>): Promise<TodoSection>;
   deleteTodoSection(id: string): Promise<void>;
 
@@ -123,7 +123,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(todoSections.order);
   }
 
-  async createTodoSection(section: InsertTodoSection): Promise<TodoSection> {
+  async createTodoSection(section: InsertTodoSection & { userId: string }): Promise<TodoSection> {
     const [newSection] = await db
       .insert(todoSections)
       .values(section)

@@ -186,6 +186,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/todo-sections", auth, async (req: any, res) => {
     try {
       const validatedData = insertTodoSectionSchema.parse(req.body);
+      
+      // Verify the group belongs to the authenticated user
+      const group = await storage.getGroup(validatedData.groupId, req.user.id);
+      if (!group) {
+        return res.status(403).json({ message: "Access denied: Group not found or not owned by user" });
+      }
+      
       const section = await storage.createTodoSection({...validatedData, userId: req.user.id});
       res.status(201).json(section);
     } catch (error) {
