@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import logoUrl from '@assets/logo-completo-vertical-clearmind_1756235946084.png';
 
@@ -22,7 +22,8 @@ interface LoginFormProps {
 
 export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, error } = useAuth();
+  const { login, isLoading, user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -35,9 +36,29 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data);
-    } catch (error) {
-      // Error is handled by useAuth hook
+      setError(null);
+      await login(data.email, data.password);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      
+      // Parse error message from response
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err.message) {
+        const match = err.message.match(/:\s*({.*})/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = err.message;
+          }
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -116,9 +137,9 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
             background: 'linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%)',
             border: 'none'
           }}
-          disabled={!isValid || loading}
+          disabled={!isValid || isLoading}
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
 

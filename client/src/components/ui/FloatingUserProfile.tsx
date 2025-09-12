@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from './button';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import {
@@ -44,7 +44,7 @@ export default function FloatingUserProfile() {
               <div className="relative">
                 <Avatar className="h-8 w-8 border-2 border-white/50">
                   <AvatarImage 
-                    src={user.profileImageUrl} 
+                    src={user.profileImageUrl || undefined} 
                     alt={user.displayName} 
                   />
                   <AvatarFallback className="bg-purple-600 text-white text-sm font-medium">
@@ -77,7 +77,7 @@ export default function FloatingUserProfile() {
             <div className="flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage 
-                  src={user.profileImageUrl} 
+                  src={user.profileImageUrl || undefined} 
                   alt={user.displayName} 
                 />
                 <AvatarFallback className="bg-purple-600 text-white font-medium">

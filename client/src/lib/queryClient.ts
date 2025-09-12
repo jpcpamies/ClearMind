@@ -8,26 +8,24 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const token = localStorage.getItem('clearmind_token');
-  const headers: Record<string, string> = {};
-  
-  if (data) {
-    headers["Content-Type"] = "application/json";
+  options?: {
+    method?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
   }
+): Promise<Response> {
+  const { method = 'GET', body, headers = {} } = options || {};
   
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (body) {
+    headers["Content-Type"] = "application/json";
   }
 
   const res = await fetch(url, {
     method,
     headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: "include", // Always include cookies for auth
   });
 
   await throwIfResNotOk(res);
@@ -40,16 +38,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = localStorage.getItem('clearmind_token');
-    const headers: Record<string, string> = {};
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const res = await fetch(queryKey.join("/") as string, {
-      headers,
-      credentials: "include",
+      credentials: "include", // Always include cookies for auth
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
