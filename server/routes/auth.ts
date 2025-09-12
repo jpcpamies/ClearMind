@@ -21,114 +21,40 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Password validation function
-const validatePassword = (password: string): string | null => {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
+// Generate JWT tokens
+const generateTokens = (userId: string) => {
+  const accessSecret = process.env.JWT_SECRET;
+  const refreshSecret = process.env.JWT_REFRESH_SECRET;
+  
+  if (!accessSecret || !refreshSecret) {
+    throw new Error('JWT secrets not configured');
+  }
 
-  if (password.length < minLength) {
-    return 'Password must be at least 8 characters long';
-  }
-  if (!hasUpperCase) {
-    return 'Password must contain at least one uppercase letter';
-  }
-  if (!hasLowerCase) {
-    return 'Password must contain at least one lowercase letter';
-  }
-  if (!hasNumbers) {
-    return 'Password must contain at least one number';
-  }
-  return null;
-};
-
-// Generate JWT token
-const generateToken = (userId: string): string => {
-  const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-  return jwt.sign(
+  const accessToken = jwt.sign(
     { userId },
-    secret as jwt.Secret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+    accessSecret,
+    { expiresIn: '15m' }
   );
+
+  const refreshToken = jwt.sign(
+    { userId },
+    refreshSecret,
+    { expiresIn: '7d' }
+  );
+
+  return { accessToken, refreshToken };
 };
 
-// Register endpoint
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, displayName } = req.body;
-
-    // Validate required fields
-    if (!email || !password || !displayName) {
-      return res.status(400).json({
-        error: 'Email, password, and display name are required',
-      });
-    }
-
-    // Validate email
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        error: 'Please provide a valid email address',
-      });
-    }
-
-    // Validate password
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      return res.status(400).json({
-        error: passwordError,
-      });
-    }
-
-    // Check if user already exists
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
-
-    if (existingUser) {
-      return res.status(400).json({
-        error: 'User with this email already exists',
-      });
-    }
-
-    // Generate username from email
-    const username = email.split('@')[0];
-
-    // Hash password
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Create user
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        passwordHash,
-        username,
-        displayName,
-        emailVerified: false,
-      })
-      .returning();
-
-    // Generate token
-    const token = generateToken(newUser.id);
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = newUser;
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user: userWithoutPassword,
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-    });
-  }
-});
+// Set secure cookie options
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction, // HTTPS only in production
+    sameSite: 'lax' as const,
+    path: '/',
+  };
+};
 
 // Login endpoint
 router.post('/login', loginLimiter, async (req, res) => {
@@ -161,24 +87,34 @@ router.post('/login', loginLimiter, async (req, res) => {
       });
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid) {
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    
+    if (!isValidPassword) {
       return res.status(401).json({
         error: 'Invalid email or password',
       });
     }
 
-    // Generate token
-    const token = generateToken(user.id);
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user.id);
 
-    // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    // Set cookies
+    const cookieOptions = getCookieOptions();
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
+    // Return user profile (without password hash)
+    const { passwordHash, ...userProfile } = user;
     res.json({
       message: 'Login successful',
-      token,
-      user: userWithoutPassword,
+      user: userProfile,
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -188,20 +124,98 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-// Logout endpoint
-router.post('/logout', (req, res) => {
-  // Since we're using JWT tokens, logout is handled on the client side
-  // by removing the token from localStorage
-  res.json({
-    message: 'Logout successful',
-  });
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: 'No refresh token provided',
+        code: 'NO_REFRESH_TOKEN'
+      });
+    }
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    if (!refreshSecret) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, refreshSecret) as { userId: string };
+    
+    // Get user from database
+    const [user] = await db.select().from(users).where(eq(users.id, decoded.userId));
+    
+    if (!user) {
+      return res.status(401).json({
+        message: 'Invalid refresh token. User not found.',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Generate new tokens
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user.id);
+
+    // Set new cookies
+    const cookieOptions = getCookieOptions();
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+    res.cookie('refreshToken', newRefreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.json({
+      message: 'Tokens refreshed successfully',
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    
+    if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        message: 'Invalid or expired refresh token',
+        code: 'INVALID_REFRESH_TOKEN'
+      });
+    }
+    
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
-// Get current user endpoint (protected)
-router.get('/me', auth, (req: any, res) => {
-  res.json({
-    user: req.user,
-  });
+// Get current user endpoint  
+router.get('/me', auth, async (req: any, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    res.json({
+      user: req.user,
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Logout endpoint
+router.post('/logout', (req, res) => {
+  try {
+    // Clear authentication cookies
+    const cookieOptions = getCookieOptions();
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+
+    res.json({
+      message: 'Logout successful',
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 export default router;

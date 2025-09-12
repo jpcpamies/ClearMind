@@ -5,64 +5,70 @@ import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
 interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    id: string;
+    email: string;
+    username: string;
+    displayName: string;
+    emailVerified: boolean | null;
+    profileImageUrl: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+  };
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  // DEMO MODE: Skip authentication and use demo user
-  const demoUser = {
-    id: 'demo-user',
-    email: 'demo@clearmind.app',
-    username: 'demo',
-    displayName: 'Demo User',
-    emailVerified: true,
-    profileImageUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  
-  req.user = demoUser;
-  next();
-  return;
-  
-  // Original auth code commented out for demo
-  /*
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Access denied. No token provided.' });
+    // Extract access token from cookies
+    const accessToken = req.cookies?.accessToken;
+    
+    if (!accessToken) {
+      return res.status(401).json({ 
+        message: 'Access denied. No token provided.',
+        code: 'NO_TOKEN'
+      });
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    
-    const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
       console.error('JWT_SECRET not configured');
       return res.status(500).json({ message: 'Internal server error' });
     }
 
-    const decoded = jwt.verify(token, secret as jwt.Secret) as { userId: string };
+    // Verify access token
+    const decoded = jwt.verify(accessToken, secret) as { userId: string };
     
     // Get user from database
     const [user] = await db.select().from(users).where(eq(users.id, decoded.userId));
     
     if (!user) {
-      return res.status(401).json({ message: 'Invalid token. User not found.' });
+      return res.status(401).json({ 
+        message: 'Invalid token. User not found.',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
-    // Remove password hash from user object
+    // Remove password hash from user object and attach to request
     const { passwordHash, ...userWithoutPassword } = user;
     req.user = userWithoutPassword;
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
+    
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Invalid token.' });
+      return res.status(401).json({ 
+        message: 'Invalid token.',
+        code: 'INVALID_TOKEN'
+      });
     }
+    
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ message: 'Token expired.' });
+      return res.status(401).json({ 
+        message: 'Token expired.',
+        code: 'TOKEN_EXPIRED'
+      });
     }
+    
     res.status(500).json({ message: 'Internal server error' });
   }
-  */
 };
