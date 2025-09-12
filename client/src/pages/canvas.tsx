@@ -28,7 +28,6 @@ export default function Canvas() {
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -71,8 +70,8 @@ export default function Canvas() {
     
     const rect = canvasRef.current.getBoundingClientRect();
     
-    // Account for sidebar occupied space (matches canvas positioning: 344px when expanded, 0 when collapsed)
-    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
+    // Account for sidebar occupied space (320px width + 12px left margin = 332px)
+    const sidebarOccupiedSpace = 332;
     const effectiveWidth = rect.width - sidebarOccupiedSpace;
     
     // Calculate the actual center of visible canvas area
@@ -100,8 +99,8 @@ export default function Canvas() {
     if (!ideasLoading && !isInitialPositioned && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       
-      // Account for sidebar occupied space (matches canvas positioning: 344px)
-      const sidebarOccupiedSpace = 344;
+      // Account for sidebar occupied space (320px width + 12px left margin = 332px)
+      const sidebarOccupiedSpace = 332;
       const effectiveWidth = rect.width - sidebarOccupiedSpace;
       const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
       const viewportCenterY = rect.height / 2;
@@ -418,8 +417,13 @@ export default function Canvas() {
               if (ideas.length > 0) {
                 const bounds = calculateCardsBounds(ideas);
                 if (bounds) {
-                                // Calculate proper viewport center accounting for sidebar state (matches canvas positioning)
-                  const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
+                  // Calculate proper viewport center accounting for sidebar
+                  const sidebarElement = document.querySelector('.fixed.top-3.left-3.bottom-3.z-floating.w-80');
+                  let sidebarOccupiedSpace = 332; // fallback
+                  if (sidebarElement) {
+                    const sidebarRect = sidebarElement.getBoundingClientRect();
+                    sidebarOccupiedSpace = sidebarRect.right;
+                  }
                   const canvasRect = canvasRef.current?.getBoundingClientRect();
                   if (canvasRect) {
                     const effectiveWidth = canvasRect.width - sidebarOccupiedSpace;
@@ -547,8 +551,22 @@ export default function Canvas() {
     const rect = canvasRef.current.getBoundingClientRect();
     console.log('📐 Canvas dimensions:', rect);
     
-    // Calculate sidebar occupied space based on collapse state (matches canvas positioning)
-    const sidebarOccupiedSpace = isSidebarCollapsed ? 0 : 344;
+    // Calculate actual sidebar occupied space by finding the floating sidebar
+    // Look for the specific sidebar by its unique class combination
+    const sidebarElement = document.querySelector('.fixed.top-3.left-3.bottom-3.z-floating.w-80');
+    let sidebarOccupiedSpace = 332; // fallback
+    
+    if (sidebarElement) {
+      const sidebarRect = sidebarElement.getBoundingClientRect();
+      sidebarOccupiedSpace = sidebarRect.right; // Distance from left edge to right edge of sidebar
+      console.log('🔍 Actual sidebar occupied space:', sidebarOccupiedSpace, 'px');
+      console.log('🔍 Sidebar rect:', sidebarRect);
+    } else {
+      console.log('⚠️ Could not find sidebar element, using fallback:', sidebarOccupiedSpace, 'px');
+      // Let's also list all elements with z-floating to debug
+      const floatingElements = document.querySelectorAll('.z-floating');
+      console.log('🔍 Found', floatingElements.length, 'floating elements:', floatingElements);
+    }
     
     const effectiveWidth = rect.width - sidebarOccupiedSpace;
     const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
@@ -647,19 +665,11 @@ export default function Canvas() {
             <FloatingSidebar
               onNewIdea={handleNewIdea}
               onTodoListOpen={handleTodoListOpen}
-              isCollapsed={isSidebarCollapsed}
-              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
           </div>
 
-          {/* Canvas - Full screen background with dynamic width based on sidebar state */}
-          <div 
-            className="canvas-content absolute inset-0 transition-all duration-300 ease-in-out"
-            style={{
-              left: isSidebarCollapsed ? '0px' : '344px', // 332px sidebar + 12px margin
-              width: isSidebarCollapsed ? '100%' : 'calc(100% - 344px)'
-            }}
-          >
+          {/* Canvas - Full screen background */}
+          <div className="canvas-content absolute inset-0">
             <InfiniteCanvas
               ref={canvasRef}
               ideas={ideas}
@@ -668,7 +678,6 @@ export default function Canvas() {
               panOffset={panOffset}
               selectedIdeaIds={selectedIdeaIds}
               sortMode={sortMode}
-              isSidebarCollapsed={isSidebarCollapsed}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}

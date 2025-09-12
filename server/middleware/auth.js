@@ -1,32 +1,9 @@
-import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
-import { db } from '../db';
-import { users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+const jwt = require('jsonwebtoken');
+const { db } = require('../db');
+const { users } = require('../../shared/schema');
+const { eq } = require('drizzle-orm');
 
-interface AuthRequest extends Request {
-  user?: any;
-}
-
-export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  // DEMO MODE: Skip authentication and use demo user
-  const demoUser = {
-    id: 'demo-user',
-    email: 'demo@clearmind.app',
-    username: 'demo',
-    displayName: 'Demo User',
-    emailVerified: true,
-    profileImageUrl: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  
-  req.user = demoUser;
-  next();
-  return;
-  
-  // Original auth code commented out for demo
-  /*
+const auth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -35,13 +12,12 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
-    const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-    if (!secret) {
+    if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET not configured');
       return res.status(500).json({ message: 'Internal server error' });
     }
 
-    const decoded = jwt.verify(token, secret as jwt.Secret) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database
     const [user] = await db.select().from(users).where(eq(users.id, decoded.userId));
@@ -56,13 +32,14 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    if (error instanceof jwt.JsonWebTokenError) {
+    if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Invalid token.' });
     }
-    if (error instanceof jwt.TokenExpiredError) {
+    if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expired.' });
     }
     res.status(500).json({ message: 'Internal server error' });
   }
-  */
 };
+
+module.exports = auth;

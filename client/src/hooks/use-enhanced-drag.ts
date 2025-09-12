@@ -28,7 +28,6 @@ interface UseEnhancedDragProps {
   panOffset?: { x: number; y: number };
   selectedIdeaIds?: Set<string>;
   onBulkDrop?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
-  isSidebarCollapsed?: boolean;
 }
 
 const initialDragState: DragState = {
@@ -48,8 +47,7 @@ export function useEnhancedDrag({
   zoom = 1, 
   panOffset = { x: 0, y: 0 },
   selectedIdeaIds = new Set(),
-  onBulkDrop,
-  isSidebarCollapsed = false
+  onBulkDrop
 }: UseEnhancedDragProps) {
   const [dragState, setDragState] = useState<DragState>(initialDragState);
   const dragStateRef = useRef<DragState>(dragState);
@@ -60,22 +58,16 @@ export function useEnhancedDrag({
     dragStateRef.current = dragState;
   }, [dragState]);
 
-  // Convert viewport coordinates to canvas coordinates
-  const viewportToCanvas = useCallback((viewportX: number, viewportY: number) => {
-    // Account for sidebar offset when converting viewport coords to canvas coords
-    // Sidebar: w-80 (320px) + left-3 (12px) + right margin (12px) = 344px total
-    const sidebarOffset = isSidebarCollapsed ? 0 : 344;
-    const adjustedScreenX = viewportX - sidebarOffset;
-    
+  // Convert screen coordinates to canvas coordinates
+  const screenToCanvas = useCallback((screenX: number, screenY: number) => {
     return {
-      x: (adjustedScreenX - panOffset.x) / zoom,
-      y: (viewportY - panOffset.y) / zoom
+      x: (screenX - panOffset.x) / zoom,
+      y: (screenY - panOffset.y) / zoom
     };
-  }, [panOffset, zoom, isSidebarCollapsed]);
+  }, [panOffset, zoom]);
 
-  // Convert canvas coordinates to canvas-relative screen coordinates (same as infinite-canvas)
-  const canvasToCanvasScreen = useCallback((canvasX: number, canvasY: number) => {
-    // This matches the positioning logic in infinite-canvas.tsx
+  // Convert canvas coordinates to screen coordinates
+  const canvasToScreen = useCallback((canvasX: number, canvasY: number) => {
     return {
       x: canvasX * zoom + panOffset.x,
       y: canvasY * zoom + panOffset.y
@@ -238,8 +230,7 @@ export function useEnhancedDrag({
         y: Math.round(e.clientY - currentState.dragOffset.y)
       };
 
-      // Convert to canvas coordinates only for calculating relative positions of other cards
-      const newCanvasPos = viewportToCanvas(newScreenPos.x, newScreenPos.y);
+      const newCanvasPos = screenToCanvas(newScreenPos.x, newScreenPos.y);
 
       currentState.selectedCards.forEach(cardId => {
         const cardElement = document.querySelector(`[data-testid="idea-card-${cardId}"]`) as HTMLElement;
@@ -248,13 +239,8 @@ export function useEnhancedDrag({
         let cardFinalScreenPos: Position;
 
         if (cardId === currentState.dragCardId) {
-          // For the primary dragged card, convert viewport position to canvas-relative position
-          cardFinalScreenPos = {
-            x: newScreenPos.x - (isSidebarCollapsed ? 0 : 344),
-            y: newScreenPos.y
-          };
+          cardFinalScreenPos = newScreenPos;
         } else {
-          // For other selected cards, maintain their relative positions
           const initialPos = currentState.initialCanvasPositions[cardId];
           const primaryInitialPos = currentState.initialCanvasPositions[currentState.dragCardId!];
           
@@ -265,7 +251,7 @@ export function useEnhancedDrag({
               x: newCanvasPos.x + relativeX,
               y: newCanvasPos.y + relativeY
             };
-            cardFinalScreenPos = canvasToCanvasScreen(cardFinalCanvasPos.x, cardFinalCanvasPos.y);
+            cardFinalScreenPos = canvasToScreen(cardFinalCanvasPos.x, cardFinalCanvasPos.y);
           } else {
             return;
           }
@@ -280,7 +266,7 @@ export function useEnhancedDrag({
         // Visual feedback is already applied via card-dragging class
       });
     }
-  }, [viewportToCanvas, canvasToCanvasScreen]);
+  }, [screenToCanvas, canvasToScreen]);
 
   // Global mouse up handler
   const handleGlobalMouseUp = useCallback((e: MouseEvent) => {
@@ -308,7 +294,7 @@ export function useEnhancedDrag({
         x: Math.round(e.clientX - currentState.dragOffset.x),
         y: Math.round(e.clientY - currentState.dragOffset.y)
       };
-      const finalCanvasPos = viewportToCanvas(finalScreenPos.x, finalScreenPos.y);
+      const finalCanvasPos = screenToCanvas(finalScreenPos.x, finalScreenPos.y);
 
       // Collect all updates for bulk operation
       const bulkUpdates: Array<{ id: string; canvasX: number; canvasY: number }> = [];
@@ -367,7 +353,7 @@ export function useEnhancedDrag({
       ...initialDragState,
       persistentSelection: prev.persistentSelection
     }));
-  }, [viewportToCanvas, debouncedSave, onBulkDrop]);
+  }, [screenToCanvas, debouncedSave, onBulkDrop]);
 
   // Handle canvas click to clear selection
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {

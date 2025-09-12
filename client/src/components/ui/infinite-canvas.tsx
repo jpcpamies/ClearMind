@@ -13,7 +13,6 @@ interface InfiniteCanvasProps {
   panOffset: { x: number; y: number };
   selectedIdeaIds: Set<string>;
   sortMode?: 'free' | 'grid' | 'byGroup';
-  isSidebarCollapsed?: boolean;
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
   onIdeaEdit: (ideaId: string) => void;
   onIdeaDelete: (ideaId: string) => void;
@@ -31,7 +30,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', isSidebarCollapsed = false, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -108,7 +107,6 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       zoom,
       panOffset,
       selectedIdeaIds,
-      isSidebarCollapsed,
       onBulkDrop: (updates) => {
         // Apply grid snapping to bulk updates
         const snappedUpdates = updates.map(update => {

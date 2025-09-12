@@ -16,7 +16,11 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onSwitchToRegister: () => void;
+}
+
+export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
 
@@ -119,7 +123,13 @@ export default function LoginForm() {
       </form>
 
       <div className="text-center text-sm">
-        <span className="text-gray-600">Welcome to ClearMind - Your space to think clearly</span>
+        <span className="text-gray-600">Don't have an account? </span>
+        <button
+          onClick={onSwitchToRegister}
+          className="text-purple-600 hover:text-purple-700 font-medium"
+        >
+          Sign up
+        </button>
       </div>
     </div>
   );

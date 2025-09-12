@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Edit2, Trash2, Upload, ChevronLeft, Menu } from "lucide-react";
+import { Plus, MoreHorizontal, Edit2, Trash2, Upload } from "lucide-react";
 import logoUrl from "@assets/logo-clearming_1756380749140.png";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -19,15 +19,11 @@ import GroupModal from "./group-modal";
 interface FloatingSidebarProps {
   onNewIdea: () => void;
   onTodoListOpen?: (groupId: string) => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
 export default function FloatingSidebar({
   onNewIdea,
   onTodoListOpen,
-  isCollapsed,
-  onToggleCollapse,
 }: FloatingSidebarProps) {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
@@ -162,55 +158,12 @@ export default function FloatingSidebar({
 
   return (
     <>
-      {/* Collapsed Toggle Button */}
-      {isCollapsed && (
-        <div 
-          className="fixed z-floating"
-          style={{ 
-            top: '14px',
-            left: '14px',
-            transition: "all 0.3s ease-in-out" 
-          }}
-        >
-          <Button
-            onClick={onToggleCollapse}
-            variant="outline"
-            size="sm"
-            className="w-12 h-12 p-0 bg-white/30 border-white/40 rounded-xl hover:bg-white/40"
-            style={{
-              backdropFilter: "blur(20px) saturate(180%) contrast(110%) brightness(100%)"
-            }}
-            data-testid="button-expand-sidebar"
-            title="Expand sidebar"
-          >
-            <Menu className="w-5 h-5 text-gray-700" />
-          </Button>
-        </div>
-      )}
-
-      {/* Main Sidebar */}
       <div 
         className="fixed top-3 left-3 bottom-3 z-floating w-80 bg-white/30 rounded-2xl border border-white/40 p-3 flex flex-col"
         style={{
-          backdropFilter: "blur(20px) saturate(180%) contrast(110%) brightness(100%)",
-          transform: isCollapsed ? "translateX(-100%)" : "translateX(0)",
-          transition: "transform 0.3s ease-in-out"
+          backdropFilter: "blur(20px) saturate(180%) contrast(110%) brightness(100%)"
         }}
       >
-        {/* Collapse Button */}
-        <div className="absolute top-3 right-3">
-          <Button
-            onClick={onToggleCollapse}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 hover:bg-white/20"
-            data-testid="button-collapse-sidebar"
-            title="Collapse sidebar"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-        </div>
-
         {/* Header with 140px spacing from top */}
         <div className="pt-[140px] mb-8">
           <img 
@@ -284,7 +237,7 @@ export default function FloatingSidebar({
                 <div
                   key={group.id}
                   data-testid={`group-item-${group.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white/20 hover:bg-white/30 transition-colors cursor-pointer group border border-white/20"
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
                   onClick={() => onTodoListOpen?.(group.id)}
                 >
                   <div className="flex items-center space-x-3">
