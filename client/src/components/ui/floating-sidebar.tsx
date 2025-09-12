@@ -284,7 +284,7 @@ export default function FloatingSidebar({
                 <div
                   key={group.id}
                   data-testid={`group-item-${group.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/20 hover:bg-white/30 transition-colors cursor-pointer group border border-white/20"
                   onClick={() => onTodoListOpen?.(group.id)}
                 >
                   <div className="flex items-center space-x-3">
