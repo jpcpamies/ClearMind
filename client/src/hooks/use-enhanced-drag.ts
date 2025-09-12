@@ -28,6 +28,7 @@ interface UseEnhancedDragProps {
   panOffset?: { x: number; y: number };
   selectedIdeaIds?: Set<string>;
   onBulkDrop?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
+  onSelectionChange?: (selectedIds: Set<string>) => void;
 }
 
 const initialDragState: DragState = {
@@ -47,7 +48,8 @@ export function useEnhancedDrag({
   zoom = 1, 
   panOffset = { x: 0, y: 0 },
   selectedIdeaIds = new Set(),
-  onBulkDrop
+  onBulkDrop,
+  onSelectionChange
 }: UseEnhancedDragProps) {
   const [dragState, setDragState] = useState<DragState>(initialDragState);
   const dragStateRef = useRef<DragState>(dragState);
@@ -82,7 +84,7 @@ export function useEnhancedDrag({
     
     savePositionTimeoutRef.current = setTimeout(() => {
       onDrop(cardId, canvasPosition);
-    }, 150);
+    }, 300);
   }, [onDrop]);
 
   // Mouse down handler
@@ -196,8 +198,13 @@ export function useEnhancedDrag({
       persistentSelection
     });
 
+    // Notify parent about selection changes
+    if (onSelectionChange) {
+      onSelectionChange(persistentSelection);
+    }
+
     document.body.style.cursor = 'grabbing';
-  }, [ideas, selectedIdeaIds]);
+  }, [ideas, selectedIdeaIds, onSelectionChange]);
 
   // Global mouse move handler
   const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
@@ -373,8 +380,13 @@ export function useEnhancedDrag({
         ...prev,
         persistentSelection: new Set()
       }));
+      
+      // Notify parent about selection clearing
+      if (onSelectionChange) {
+        onSelectionChange(new Set());
+      }
     }
-  }, []);
+  }, [onSelectionChange]);
 
   // Touch event handlers
   const handleTouchStart = useCallback((e: React.TouchEvent, item: DragItem) => {

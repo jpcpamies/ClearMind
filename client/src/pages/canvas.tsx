@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,10 @@ export default function Canvas() {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
   const { toast } = useToast();
+  
+  // Add debouncing refs for position updates
+  const positionUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const bulkUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { canvasRef, zoom, setZoom, panOffset, setPanOffset, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd } = useCanvas();
 
@@ -140,6 +144,22 @@ export default function Canvas() {
       setIsInitialPositioned(true);
     }
   }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset]);
+  
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all position update timeouts
+      positionUpdateTimeouts.current.forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+      positionUpdateTimeouts.current.clear();
+      
+      // Clear bulk update timeout
+      if (bulkUpdateTimeoutRef.current) {
+        clearTimeout(bulkUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Create idea mutation
   const createIdeaMutation = useMutation({
@@ -241,7 +261,30 @@ export default function Canvas() {
       canvasX: updates.canvasX !== undefined ? updates.canvasX : currentIdea?.canvasX,
       canvasY: updates.canvasY !== undefined ? updates.canvasY : currentIdea?.canvasY,
     };
-    updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
+    
+    // Check if this is a position update (canvasX or canvasY being updated)
+    const isPositionUpdate = updates.canvasX !== undefined || updates.canvasY !== undefined;
+    
+    if (isPositionUpdate) {
+      // Debounce position updates to prevent excessive API calls
+      const timeoutMap = positionUpdateTimeouts.current;
+      
+      // Clear existing timeout for this card
+      if (timeoutMap.has(ideaId)) {
+        clearTimeout(timeoutMap.get(ideaId)!);
+      }
+      
+      // Set new timeout
+      const timeoutId = setTimeout(() => {
+        updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
+        timeoutMap.delete(ideaId);
+      }, 300); // 300ms debounce delay
+      
+      timeoutMap.set(ideaId, timeoutId);
+    } else {
+      // Non-position updates should be immediate
+      updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
+    }
   };
 
   const handleIdeaDelete = (ideaId: string) => {
@@ -304,6 +347,11 @@ export default function Canvas() {
     });
     
     setSelectedIdeaIds(newSelected);
+  };
+  
+  // Handle selection replacement (used by drag system)
+  const handleSelectionReplace = (ideaIds: string[]) => {
+    setSelectedIdeaIds(new Set(ideaIds));
   };
 
   // Handle bulk position updates for multiple cards
@@ -456,29 +504,42 @@ export default function Canvas() {
   }, [apiRequest, queryClient, toast]);
 
   const handleBulkUpdate = (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => {
+    // Clear any existing bulk update timeout
+    if (bulkUpdateTimeoutRef.current) {
+      clearTimeout(bulkUpdateTimeoutRef.current);
+    }
     
-    // Update all cards simultaneously
-    Promise.all(
-      updates.map(update => 
-        apiRequest("PUT", `/api/ideas/${update.id}`, {
-          canvasX: update.canvasX,
-          canvasY: update.canvasY
-        })
-      )
-    ).then(() => {
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-      toast({
-        title: "Success",
-        description: `Updated positions for ${updates.length} cards`,
-      });
-    }).catch(() => {
-      toast({
-        title: "Error", 
-        description: "Failed to update some card positions",
-        variant: "destructive",
-      });
+    // Clear individual position update timeouts for cards in bulk update
+    updates.forEach(update => {
+      const timeoutMap = positionUpdateTimeouts.current;
+      if (timeoutMap.has(update.id)) {
+        clearTimeout(timeoutMap.get(update.id)!);
+        timeoutMap.delete(update.id);
+      }
     });
+    
+    // Debounce bulk updates too
+    bulkUpdateTimeoutRef.current = setTimeout(() => {
+      // Update all cards simultaneously
+      Promise.all(
+        updates.map(update => 
+          apiRequest("PUT", `/api/ideas/${update.id}`, {
+            canvasX: update.canvasX,
+            canvasY: update.canvasY
+          })
+        )
+      ).then(() => {
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      }).catch(() => {
+        toast({
+          title: "Error", 
+          description: "Failed to update some card positions",
+          variant: "destructive",
+        });
+      });
+      bulkUpdateTimeoutRef.current = null;
+    }, 200); // Shorter delay for bulk updates as they're already optimized
   };
 
   const handleBulkDelete = () => {
@@ -683,6 +744,7 @@ export default function Canvas() {
               onIdeaDelete={handleIdeaDelete}
               onIdeaSelect={handleIdeaSelect}
               onBulkSelect={handleBulkSelect}
+              onSelectionReplace={handleSelectionReplace}
               onBulkUpdate={handleBulkUpdate}
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}

@@ -18,6 +18,7 @@ interface InfiniteCanvasProps {
   onIdeaDelete: (ideaId: string) => void;
   onIdeaSelect: (ideaId: string, isCtrlPressed: boolean) => void;
   onBulkSelect?: (ideaIds: string[]) => void;
+  onSelectionReplace?: (ideaIds: string[]) => void;
   onBulkUpdate?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
@@ -30,7 +31,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onSelectionReplace, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -118,6 +119,16 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
           };
         });
         onBulkUpdate?.(snappedUpdates);
+      },
+      onSelectionChange: (selectedIds) => {
+        // Convert Set to Array and replace parent selection state
+        const selectedArray = Array.from(selectedIds);
+        if (onSelectionReplace) {
+          onSelectionReplace(selectedArray);
+        } else if (selectedArray.length === 0) {
+          // Fallback: clear selection using the existing method
+          onIdeaSelect('', false);
+        }
       },
     });
 
@@ -385,18 +396,11 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                     return;
                   }
                   
-                  // Handle Cmd+Click for multi-selection
-                  if (e.metaKey || e.ctrlKey) {
-                    onIdeaSelect(idea.id, true);
-                    return;
-                  }
-                  
-                  // Clear selection if not Cmd+clicking
-                  if (selectedIdeaIds.size > 0) {
-                    onIdeaSelect(idea.id, false);
-                  }
-                  
+                  // Always handle the mouse down for dragging, but also handle selection
                   handleMouseDown(e, { id: idea.id, type: "idea" });
+                  
+                  // The drag system will handle the selection logic internally
+                  // This ensures proper visual feedback and selection state management
                 }}
                 onTouchStart={(e) => handleTouchStart(e, { id: idea.id, type: "idea" })}
                 isSelected={selectedCards.has(idea.id) || selectedIdeaIds.has(idea.id)}
