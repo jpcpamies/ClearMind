@@ -21,6 +21,9 @@ app.use((req, res, next) => {
   };
 
   res.on("finish", () => {
+    // Skip logging for HEAD requests to reduce noise
+    if (req.method === 'HEAD') return;
+    
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
@@ -40,6 +43,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Handle HEAD /api health checks to stop log flooding
+  app.head('/api', (_req, res) => res.status(204).end());
+  
+  // Optional health check endpoint
+  app.get('/api/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
