@@ -1,5 +1,4 @@
 import express, { type Request, Response, NextFunction } from "express";
-import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -7,7 +6,6 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -21,9 +19,6 @@ app.use((req, res, next) => {
   };
 
   res.on("finish", () => {
-    // Skip logging for HEAD requests to reduce noise
-    if (req.method === 'HEAD') return;
-    
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
@@ -43,12 +38,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Handle HEAD /api health checks to stop log flooding
-  app.head('/api', (_req, res) => res.status(204).end());
-  
-  // Optional health check endpoint
-  app.get('/api/health', (_req, res) => res.status(200).json({ status: 'ok' }));
-
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,12 +1,12 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import validator from 'validator';
-import rateLimit from 'express-rate-limit';
-import { db } from '../db';
-import { users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
-import { auth } from '../middleware/auth';
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const validator = require('validator');
+const rateLimit = require('express-rate-limit');
+const { db } = require('../db');
+const { users } = require('../../shared/schema');
+const { eq } = require('drizzle-orm');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
 });
 
 // Password validation function
-const validatePassword = (password: string): string | null => {
+const validatePassword = (password) => {
   const minLength = 8;
   const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
@@ -44,24 +44,23 @@ const validatePassword = (password: string): string | null => {
 };
 
 // Generate JWT token
-const generateToken = (userId: string): string => {
-  const secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const generateToken = (userId) => {
   return jwt.sign(
     { userId },
-    secret as jwt.Secret,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
 
 // Register endpoint
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, displayName } = req.body;
+    const { email, password, username, displayName } = req.body;
 
     // Validate required fields
-    if (!email || !password || !displayName) {
+    if (!email || !password || !username || !displayName) {
       return res.status(400).json({
-        error: 'Email, password, and display name are required',
+        error: 'Email, password, username, and display name are required',
       });
     }
 
@@ -92,8 +91,17 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Generate username from email
-    const username = email.split('@')[0];
+    // Check if username already exists
+    const [existingUsername] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+
+    if (existingUsername) {
+      return res.status(400).json({
+        error: 'Username already taken',
+      });
+    }
 
     // Hash password
     const saltRounds = 12;
@@ -198,10 +206,10 @@ router.post('/logout', (req, res) => {
 });
 
 // Get current user endpoint (protected)
-router.get('/me', auth, (req: any, res) => {
+router.get('/me', auth, (req, res) => {
   res.json({
     user: req.user,
   });
 });
 
-export default router;
+module.exports = router;

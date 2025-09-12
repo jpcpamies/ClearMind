@@ -221,11 +221,6 @@
   outline-offset: 1px;
 }
 
-/* Card organization transitions */
-.card-organizing {
-  transition: transform 0.3s ease-in-out, left 0.3s ease-in-out, top 0.3s ease-in-out;
-}
-
 .card-selected {
   position: relative !important;
   z-index: 10 !important;

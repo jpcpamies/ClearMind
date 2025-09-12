@@ -12,13 +12,11 @@ interface InfiniteCanvasProps {
   zoom: number;
   panOffset: { x: number; y: number };
   selectedIdeaIds: Set<string>;
-  sortMode?: 'free' | 'grid' | 'byGroup';
   onIdeaUpdate: (ideaId: string, updates: Partial<Idea>) => void;
   onIdeaEdit: (ideaId: string) => void;
   onIdeaDelete: (ideaId: string) => void;
   onIdeaSelect: (ideaId: string, isCtrlPressed: boolean) => void;
   onBulkSelect?: (ideaIds: string[]) => void;
-  onSelectionReplace?: (ideaIds: string[]) => void;
   onBulkUpdate?: (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => void;
   onBulkDelete: () => void;
   onBulkGroupChange: (groupId: string) => void;
@@ -31,7 +29,7 @@ interface InfiniteCanvasProps {
 }
 
 const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
-  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, sortMode = 'free', onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onSelectionReplace, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
+  ({ ideas, groups, zoom, panOffset, selectedIdeaIds, onIdeaUpdate, onIdeaEdit, onIdeaDelete, onIdeaSelect, onBulkSelect, onBulkUpdate, onBulkDelete, onBulkGroupChange, onNewGroup, onPanChange, onWheel, onTouchStart, onTouchMove, onTouchEnd }, ref) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
@@ -79,57 +77,19 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
       };
     }, []);
     
-    // Grid snapping function
-    const snapToGrid = useCallback((x: number, y: number) => {
-      if (sortMode !== 'grid') return { x, y };
-      
-      const cardWidth = 256;
-      const cardHeight = 180;
-      const margin = 20; // 20px spacing for grid mode
-      const gridWidth = cardWidth + margin;
-      const gridHeight = cardHeight + margin;
-      
-      return {
-        x: Math.round(x / gridWidth) * gridWidth,
-        y: Math.round(y / gridHeight) * gridHeight
-      };
-    }, [sortMode]);
-
     const { draggedItem, isDragging, selectedCards, persistentSelection, handleMouseDown, handleTouchStart, handleCanvasClick, wasDragged } = useEnhancedDrag({
       onDrop: (itemId, canvasPosition) => {
-        // Apply grid snapping if in grid mode
-        const snappedPosition = snapToGrid(canvasPosition.x, canvasPosition.y);
+        // Position is already in canvas coordinates, no conversion needed
         onIdeaUpdate(itemId, { 
-          canvasX: snappedPosition.x, 
-          canvasY: snappedPosition.y 
+          canvasX: canvasPosition.x, 
+          canvasY: canvasPosition.y 
         });
       },
       ideas,
       zoom,
       panOffset,
       selectedIdeaIds,
-      onBulkDrop: (updates) => {
-        // Apply grid snapping to bulk updates
-        const snappedUpdates = updates.map(update => {
-          const snapped = snapToGrid(update.canvasX, update.canvasY);
-          return {
-            ...update,
-            canvasX: snapped.x,
-            canvasY: snapped.y
-          };
-        });
-        onBulkUpdate?.(snappedUpdates);
-      },
-      onSelectionChange: (selectedIds) => {
-        // Convert Set to Array and replace parent selection state
-        const selectedArray = Array.from(selectedIds);
-        if (onSelectionReplace) {
-          onSelectionReplace(selectedArray);
-        } else if (selectedArray.length === 0) {
-          // Fallback: clear selection using the existing method
-          onIdeaSelect('', false);
-        }
-      },
+      onBulkDrop: onBulkUpdate,
     });
 
     // Handle card expansion - only expand if not dragged
@@ -396,11 +356,18 @@ const InfiniteCanvas = forwardRef<HTMLDivElement, InfiniteCanvasProps>(
                     return;
                   }
                   
-                  // Always handle the mouse down for dragging, but also handle selection
-                  handleMouseDown(e, { id: idea.id, type: "idea" });
+                  // Handle Cmd+Click for multi-selection
+                  if (e.metaKey || e.ctrlKey) {
+                    onIdeaSelect(idea.id, true);
+                    return;
+                  }
                   
-                  // The drag system will handle the selection logic internally
-                  // This ensures proper visual feedback and selection state management
+                  // Clear selection if not Cmd+clicking
+                  if (selectedIdeaIds.size > 0) {
+                    onIdeaSelect(idea.id, false);
+                  }
+                  
+                  handleMouseDown(e, { id: idea.id, type: "idea" });
                 }}
                 onTouchStart={(e) => handleTouchStart(e, { id: idea.id, type: "idea" })}
                 isSelected={selectedCards.has(idea.id) || selectedIdeaIds.has(idea.id)}

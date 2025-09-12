@@ -8,24 +8,26 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
+  method: string,
   url: string,
-  options?: {
-    method?: string;
-    body?: unknown;
-    headers?: Record<string, string>;
-  }
+  data?: unknown | undefined,
 ): Promise<Response> {
-  const { method = 'GET', body, headers = {} } = options || {};
+  const token = localStorage.getItem('clearmind_token');
+  const headers: Record<string, string> = {};
   
-  if (body) {
+  if (data) {
     headers["Content-Type"] = "application/json";
+  }
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(url, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include", // Always include cookies for auth
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -38,8 +40,16 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const token = localStorage.getItem('clearmind_token');
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include", // Always include cookies for auth
+      headers,
+      credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

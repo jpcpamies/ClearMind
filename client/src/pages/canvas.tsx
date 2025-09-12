@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,7 @@ import IdeaModal from "@/components/ui/idea-modal";
 import TodoListModal from "@/components/ui/todolist-modal";
 import CreateTodoListModal from "@/components/modals/CreateTodoListModal";
 import GroupModal from "@/components/ui/group-modal";
-import ZoomControls, { SortMode } from "@/components/ui/zoom-controls";
+import ZoomControls from "@/components/ui/zoom-controls";
 import { useCanvas } from "@/hooks/use-canvas";
 import type { Idea, Group } from "@shared/schema";
 
@@ -24,16 +24,10 @@ export default function Canvas() {
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [isInitialPositioned, setIsInitialPositioned] = useState(false);
   const [selectedIdeaIds, setSelectedIdeaIds] = useState<Set<string>>(new Set());
-  const [sortMode, setSortMode] = useState<SortMode>('free');
-  const [isOrganizing, setIsOrganizing] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
   const { toast } = useToast();
-  
-  // Add debouncing refs for position updates
-  const positionUpdateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  const bulkUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { canvasRef, zoom, setZoom, panOffset, setPanOffset, handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd } = useCanvas();
 
@@ -144,22 +138,6 @@ export default function Canvas() {
       setIsInitialPositioned(true);
     }
   }, [ideas, ideasLoading, isInitialPositioned, zoom, canvasRef, setPanOffset]);
-  
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      // Clear all position update timeouts
-      positionUpdateTimeouts.current.forEach((timeout) => {
-        clearTimeout(timeout);
-      });
-      positionUpdateTimeouts.current.clear();
-      
-      // Clear bulk update timeout
-      if (bulkUpdateTimeoutRef.current) {
-        clearTimeout(bulkUpdateTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Create idea mutation
   const createIdeaMutation = useMutation({
@@ -261,30 +239,7 @@ export default function Canvas() {
       canvasX: updates.canvasX !== undefined ? updates.canvasX : currentIdea?.canvasX,
       canvasY: updates.canvasY !== undefined ? updates.canvasY : currentIdea?.canvasY,
     };
-    
-    // Check if this is a position update (canvasX or canvasY being updated)
-    const isPositionUpdate = updates.canvasX !== undefined || updates.canvasY !== undefined;
-    
-    if (isPositionUpdate) {
-      // Debounce position updates to prevent excessive API calls
-      const timeoutMap = positionUpdateTimeouts.current;
-      
-      // Clear existing timeout for this card
-      if (timeoutMap.has(ideaId)) {
-        clearTimeout(timeoutMap.get(ideaId)!);
-      }
-      
-      // Set new timeout
-      const timeoutId = setTimeout(() => {
-        updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
-        timeoutMap.delete(ideaId);
-      }, 300); // 300ms debounce delay
-      
-      timeoutMap.set(ideaId, timeoutId);
-    } else {
-      // Non-position updates should be immediate
-      updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
-    }
+    updateIdeaMutation.mutate({ id: ideaId, ...updatesWithPosition });
   };
 
   const handleIdeaDelete = (ideaId: string) => {
@@ -348,198 +303,32 @@ export default function Canvas() {
     
     setSelectedIdeaIds(newSelected);
   };
-  
-  // Handle selection replacement (used by drag system)
-  const handleSelectionReplace = (ideaIds: string[]) => {
-    setSelectedIdeaIds(new Set(ideaIds));
-  };
 
   // Handle bulk position updates for multiple cards
-  // Organization algorithms
-  const organizeCards = useCallback((mode: SortMode, ideas: Idea[], groups: Group[]) => {
-    if (mode === 'free') return; // No organization needed for free mode
-
-    const cardPositions: Array<{ id: string; canvasX: number; canvasY: number }> = [];
-
-    if (mode === 'grid') {
-      // Grid mode: arrange cards in a grid with 20px margins
-      const cardWidth = 256;
-      const cardHeight = 180;
-      const margin = 20;
-      const columns = Math.ceil(Math.sqrt(ideas.length));
-      
-      ideas.forEach((idea, index) => {
-        const col = index % columns;
-        const row = Math.floor(index / columns);
-        
-        cardPositions.push({
-          id: idea.id,
-          canvasX: col * (cardWidth + margin),
-          canvasY: row * (cardHeight + margin)
-        });
-      });
-
-    } else if (mode === 'byGroup') {
-      // By Group mode: organize by group in vertical columns  
-      const cardWidth = 256;
-      const cardHeight = 180;
-      const verticalMargin = 20; // 20px spacing between cards vertically
-      const horizontalMargin = 60; // 60px spacing between groups horizontally
-      
-      // Group ideas by groupId
-      const groupedIdeas: { [key: string]: Idea[] } = {};
-      const ungroupedIdeas: Idea[] = [];
-      
-      ideas.forEach(idea => {
-        if (idea.groupId) {
-          if (!groupedIdeas[idea.groupId]) {
-            groupedIdeas[idea.groupId] = [];
-          }
-          groupedIdeas[idea.groupId].push(idea);
-        } else {
-          ungroupedIdeas.push(idea);
-        }
-      });
-
-      // Sort ideas within each group by creation date
-      Object.keys(groupedIdeas).forEach(groupId => {
-        groupedIdeas[groupId].sort((a, b) => 
-          new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
-        );
-      });
-
-      // Sort ungrouped ideas by creation date
-      ungroupedIdeas.sort((a, b) => 
-        new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
-      );
-
-      let columnIndex = 0;
-
-      // Position grouped ideas
-      Object.keys(groupedIdeas).forEach(groupId => {
-        const ideasInGroup = groupedIdeas[groupId];
-        ideasInGroup.forEach((idea, index) => {
-          cardPositions.push({
-            id: idea.id,
-            canvasX: columnIndex * (cardWidth + horizontalMargin),
-            canvasY: index * (cardHeight + verticalMargin)
-          });
-        });
-        columnIndex++;
-      });
-
-      // Position ungrouped ideas in their own column
-      if (ungroupedIdeas.length > 0) {
-        ungroupedIdeas.forEach((idea, index) => {
-          cardPositions.push({
-            id: idea.id,
-            canvasX: columnIndex * (cardWidth + horizontalMargin),
-            canvasY: index * (cardHeight + verticalMargin)
-          });
-        });
-      }
-    }
-
-    // Update all card positions
-    if (cardPositions.length > 0) {
-      setIsOrganizing(true);
-      
-      // Use Promise.all for immediate position updates
-      Promise.all(
-        cardPositions.map(update => 
-          apiRequest("PUT", `/api/ideas/${update.id}`, {
-            canvasX: update.canvasX,
-            canvasY: update.canvasY
-          })
-        )
-      ).then(() => {
-        // Invalidate queries to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-        
-        // After organization, fit to canvas for by group mode
-        setTimeout(() => {
-          if (mode === 'byGroup') {
-            // Trigger fit to canvas inline for proper scaling and centering
-            setZoom(1);
-            setTimeout(() => {
-              if (ideas.length > 0) {
-                const bounds = calculateCardsBounds(ideas);
-                if (bounds) {
-                  // Calculate proper viewport center accounting for sidebar
-                  const sidebarElement = document.querySelector('.fixed.top-3.left-3.bottom-3.z-floating.w-80');
-                  let sidebarOccupiedSpace = 332; // fallback
-                  if (sidebarElement) {
-                    const sidebarRect = sidebarElement.getBoundingClientRect();
-                    sidebarOccupiedSpace = sidebarRect.right;
-                  }
-                  const canvasRect = canvasRef.current?.getBoundingClientRect();
-                  if (canvasRect) {
-                    const effectiveWidth = canvasRect.width - sidebarOccupiedSpace;
-                    const viewportCenterX = (effectiveWidth / 2) + sidebarOccupiedSpace;
-                    const viewportCenterY = canvasRect.height / 2;
-                    const offsetX = viewportCenterX - bounds.centerX;
-                    const offsetY = viewportCenterY - bounds.centerY;
-                    setPanOffset({ x: offsetX, y: offsetY });
-                  }
-                }
-              }
-            }, 50);
-          }
-          setIsOrganizing(false);
-        }, 100);
-        
-        toast({
-          title: "Cards organized",
-          description: `Organized ${cardPositions.length} cards in ${mode} mode`,
-        });
-      }).catch(() => {
-        toast({
-          title: "Error", 
-          description: "Failed to organize some cards",
-          variant: "destructive",
-        });
-        setIsOrganizing(false);
-      });
-    }
-  }, [apiRequest, queryClient, toast]);
-
   const handleBulkUpdate = (updates: Array<{ id: string; canvasX: number; canvasY: number }>) => {
-    // Clear any existing bulk update timeout
-    if (bulkUpdateTimeoutRef.current) {
-      clearTimeout(bulkUpdateTimeoutRef.current);
-    }
     
-    // Clear individual position update timeouts for cards in bulk update
-    updates.forEach(update => {
-      const timeoutMap = positionUpdateTimeouts.current;
-      if (timeoutMap.has(update.id)) {
-        clearTimeout(timeoutMap.get(update.id)!);
-        timeoutMap.delete(update.id);
-      }
-    });
-    
-    // Debounce bulk updates too
-    bulkUpdateTimeoutRef.current = setTimeout(() => {
-      // Update all cards simultaneously
-      Promise.all(
-        updates.map(update => 
-          apiRequest("PUT", `/api/ideas/${update.id}`, {
-            canvasX: update.canvasX,
-            canvasY: update.canvasY
-          })
-        )
-      ).then(() => {
-        // Invalidate queries to refresh the UI
-        queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
-      }).catch(() => {
-        toast({
-          title: "Error", 
-          description: "Failed to update some card positions",
-          variant: "destructive",
-        });
+    // Update all cards simultaneously
+    Promise.all(
+      updates.map(update => 
+        apiRequest("PUT", `/api/ideas/${update.id}`, {
+          canvasX: update.canvasX,
+          canvasY: update.canvasY
+        })
+      )
+    ).then(() => {
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/ideas"] });
+      toast({
+        title: "Success",
+        description: `Updated positions for ${updates.length} cards`,
       });
-      bulkUpdateTimeoutRef.current = null;
-    }, 200); // Shorter delay for bulk updates as they're already optimized
+    }).catch(() => {
+      toast({
+        title: "Error", 
+        description: "Failed to update some card positions",
+        variant: "destructive",
+      });
+    });
   };
 
   const handleBulkDelete = () => {
@@ -738,13 +527,11 @@ export default function Canvas() {
               zoom={zoom}
               panOffset={panOffset}
               selectedIdeaIds={selectedIdeaIds}
-              sortMode={sortMode}
               onIdeaUpdate={handleIdeaUpdate}
               onIdeaEdit={handleEditIdea}
               onIdeaDelete={handleIdeaDelete}
               onIdeaSelect={handleIdeaSelect}
               onBulkSelect={handleBulkSelect}
-              onSelectionReplace={handleSelectionReplace}
               onBulkUpdate={handleBulkUpdate}
               onBulkDelete={handleBulkDelete}
               onBulkGroupChange={handleBulkGroupChange}
@@ -757,29 +544,11 @@ export default function Canvas() {
             />
           </div>
 
-          {/* Zoom Controls with Sort Mode - now positioned internally */}
+          {/* Zoom Controls - now positioned internally */}
           <ZoomControls
             zoom={zoom}
             onZoomChange={setZoom}
             onResetView={handleResetView}
-            sortMode={sortMode}
-            onSortModeChange={(mode) => {
-              setSortMode(mode);
-              // Add organizing class to all cards for smooth animation
-              if (mode !== 'free') {
-                setTimeout(() => {
-                  document.querySelectorAll('.idea-card').forEach(card => {
-                    card.classList.add('card-organizing');
-                  });
-                  setTimeout(() => {
-                    document.querySelectorAll('.idea-card').forEach(card => {
-                      card.classList.remove('card-organizing');
-                    });
-                  }, 400);
-                }, 50);
-              }
-              organizeCards(mode, ideas, groups);
-            }}
           />
         </>
       ) : (
